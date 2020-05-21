@@ -1,6 +1,6 @@
 library(gh)
 
-res <- gh(
+workout <- gh(
   "POST /repos/:owner/:repo/issues",
   owner = "zhiiiyang",
   repo = "OTworkout",
