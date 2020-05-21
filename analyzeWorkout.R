@@ -20,7 +20,7 @@ comments <- gh(
 
 url_pattern <- "http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
 
-records <- lapply(comments, function(comment) {
+record_list <- lapply(comments, function(comment) {
   fig <- str_extract(comment$body, url_pattern)
   fig <- gsub(")","",fig)
   eng <- tesseract("eng")
@@ -29,19 +29,19 @@ records <- lapply(comments, function(comment) {
   
   date <- strings[grep("2020", strings)]
   
-  calories_points <- strings[which(!is.na(str_match(strings, "CALORIES")))-1]
-  c(calories, spalshpoints) %<-% str_split(calories_points, " ")[[1]]
-  
-  time <- strings[which(!is.na(str_match(strings, "2020")))+1]
-  
-  heartrates <- strings[which(!is.na(str_match(strings, "AVERAGE HEART RATE")))-1]
+  # return(calories_points)
+  c(calories, spalshpoints) %<-% str_split(strings[9], " ")[[1]]
+
+  time <- strings[grep("2020", strings)+1]
+
+  heartrates <- strings[grep("AVERAGE HEART RATE", strings)-1]
   c(hr, maxhr) %<-% str_split(heartrates, " ")[[1]]
-  
-  distance <- strings[which(!is.na(str_match(strings, "MILES STEPS")))-1]
+
+  distance <- strings[grep("MILES STEPS", strings)-1]
   c(miles, steps) %<-% str_split(distance, " ")[[1]]
-  
+
   return(data.frame(date, time, calories, spalshpoints, hr, maxhr, miles, steps,
                     stringsAsFactors = FALSE) )
 }) 
 
-records <- do.call(rbind, records)
+records <- do.call(rbind, record_list)

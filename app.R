@@ -8,8 +8,7 @@
 #
 
 library(shinydashboard)
-#source("analyzeWorkout.R")
-# Define UI for application that draws a histogram
+source("analyzeWorkout.R")
 
 ui <- dashboardPage(
     dashboardHeader(title = "Zhi's 30-day workout challenge"),
@@ -17,23 +16,32 @@ ui <- dashboardPage(
     dashboardBody(
         fluidRow(
             # A static valueBox
-            valueBox(paste0(length(c(1,2)), "/30"), "Completed", 
-                     icon = icon("check-square"), color = "aqua"),
+            valueBoxOutput("completion"),
             
-            # Dynamic valueBoxes
-            valueBox(paste0(round(length(c(1,2))/30*100, 1), "%"), 
-                     "Progress", color = "red", 
-                     icon = icon("battery-half")),
+            valueBoxOutput("progress"),
             
-            valueBox(sum(as.numeric(c(1,2))), 
-                     "Total calories burned", color = "green",
-                     icon = icon("dumbbell")),
+            valueBoxOutput("totalcalories")
         )
     )
 )
 
 server <- function(input, output) {
+    output$completion <- renderValueBox({
+        valueBox(paste0(length(issues_closed), "/30"), "Completed", 
+                 icon = icon("check-square"), color = "aqua")
+    })
     
+    output$progress <- renderValueBox({
+        valueBox(paste0(round(length(issues_closed)/30*100, 1), "%"), 
+                 "Progress", color = "red", 
+                 icon = icon("battery-half"))
+    })
+    
+    output$totalcalories <- renderValueBox({
+        valueBox(sum(as.numeric(records$calories)),
+                 "Total calories burned", color = "green",
+                 icon = icon("dumbbell"))
+    })
 }
 
 shinyApp(ui, server)
