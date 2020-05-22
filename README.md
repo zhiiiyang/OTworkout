@@ -2,7 +2,7 @@
   <a href="https://zhiyang.netlify.com/">
     <img src=https://zhiyang.netlify.com/img/zhi.png alt="Zhi" width=27>
   </a>
-  &nbsp;Workout auto-generator and worker analyzer &nbsp;
+  &nbsp;Workout auto-generator and workout analyzer &nbsp;
 </h1>
 
 <div align="center">
