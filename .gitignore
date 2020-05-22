@@ -3,3 +3,4 @@
 .RData
 .Ruserdata
 deploy.R
+.DS_Store

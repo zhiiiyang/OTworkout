@@ -32,7 +32,8 @@ record_list <- lapply(comments, function(comment) {
   # return(calories_points)
   c(calories, spalshpoints) %<-% str_split(strings[9], " ")[[1]]
 
-  time <- strings[grep("2020", strings)+1]
+  c(min, second) %<-%  str_extract_all(strings[grep("2020", strings)+1], "(\\d)+")[[1]] 
+  time <- as.numeric(min) + as.numeric(second)/60
 
   heartrates <- strings[grep("AVERAGE HEART RATE", strings)-1]
   c(hr, maxhr) %<-% str_split(heartrates, " ")[[1]]
