@@ -11,6 +11,13 @@
 
 </div>
 
+![]("www/appscreensho.PNG")
+
+This Shiny app records the number of completed workout via closed issues and reads from the workout screenshots for duration time, calories, heart rates and etc. 
+
+
+![]("https://user-images.githubusercontent.com/7269113/82625217-739a1200-9b99-11ea-9663-fef93d848fdc.png")
+
 <!--
 Quick Link 
 -->
