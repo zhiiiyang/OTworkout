@@ -9,28 +9,27 @@
 
 library(shinydashboard)
 library(golem)
+library(metathis)
 source("analyzeWorkout.R")
 
-ui <- dashboardPage(
+addResourcePath(prefix = 'pics', directoryPath = 'www/')
+
+ui <- fluidPage(
+    h3("Zhi's 30-day Workout challenge", align = "center"),
     
-    dashboardHeader(title = "Zhi's 30-day workout challenge"),
-    dashboardSidebar(),
-    dashboardBody(
-        tags$head(tags$link(rel="shortcut icon", href="www/favicon.ico")),
-        
-        fluidRow(
-            # A static valueBox
-            valueBoxOutput("completion"),
-            
-            valueBoxOutput("progress"),
-            
-            valueBoxOutput("totalcalories"),
-            
-            valueBoxOutput("totaltime"),
-            
-            valueBoxOutput("hr")
-        )
-    )
+    tags$head(tags$link(rel="shortcut icon", href="pics/favicon.ico")),
+    
+    shinyWidgets::useShinydashboard(),
+    
+    valueBoxOutput("completion"),
+    
+    valueBoxOutput("progress"),
+    
+    valueBoxOutput("totalcalories"),
+    
+    valueBoxOutput("totaltime"),
+    
+    valueBoxOutput("hr")
 )
 
 server <- function(input, output) {
