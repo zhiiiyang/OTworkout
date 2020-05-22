@@ -2,7 +2,7 @@
   <a href="https://zhiyang.netlify.com/">
     <img src=https://zhiyang.netlify.com/img/zhi.png alt="Zhi" width=27>
   </a>
-  &nbsp;Workout auto-generator and worker analyzer &nbsp;
+  &nbsp;Workout auto-generator and workout analyzer &nbsp;
 </h1>
 
 <div align="center">
@@ -11,12 +11,16 @@
 
 </div>
 
-![]("www/appscreensho.PNG")
 
-This Shiny app records the number of completed workout via closed issues and reads from the workout screenshots for duration time, calories, heart rates and etc. 
+This #rstats project is dedicated to auto-generate workout plans and extract statistics from Orange Theory workout screenshots. This Shiny app records the number of completed workout via closed issues and reads from the workout screenshots for duration time, calories, heart rates and etc.   
 
 
-![]("https://user-images.githubusercontent.com/7269113/82625217-739a1200-9b99-11ea-9663-fef93d848fdc.png")
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/7269113/82625217-739a1200-9b99-11ea-9663-fef93d848fdc.png" height="600">
+  <img src="https://img.icons8.com/plasticine/2x/arrow.png" class="middle" height="100">
+  <img src="www/appscreensho.PNG" height="600">
+</p>
+
 
 <!--
 Quick Link 
@@ -27,4 +31,4 @@ Quick Link
 [GitHub]:https://github.com/zhiiiyang
 [Website]:https://zhiyang.netlify.com/
 
-This #rstats project is dedicated to auto-generate workout plans and extract statistics from Orange Theory workout screenshots.  
+
