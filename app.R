@@ -21,7 +21,7 @@ ui <- fluidPage(
     
     shinyWidgets::useShinydashboard(),
     
-    valueBoxOutput("completion"),
+    plotOutput("completion"),
     
     valueBoxOutput("progress"),
     
@@ -36,6 +36,18 @@ server <- function(input, output) {
     output$completion <- renderValueBox({
         valueBox(paste0(length(issues_closed), "/30"), "Completed", 
                  icon = icon("check-square"), color = "aqua")
+    })
+    
+    output$completion <- renderPlot({
+        ggplot(data = data) +
+            geom_rect(aes(ymax=ymax-0.002, ymin=ymin+0.002, xmax=3, xmin=2, fill=category)) +
+            geom_text( x=-1, y = 0, label = paste0(nrow(records),"/30"), size=10) + 
+            scale_fill_manual(values = c(hcl.colors(30, palette = "Temp", rev = TRUE)[1:nrow(records)],
+                                         rep("gray95", 30 - nrow(records))))+
+            coord_polar(theta="y") +
+            xlim(c(-1, 4)) +
+            theme_void() +
+            theme(legend.position = "none")
     })
     
     output$progress <- renderValueBox({
@@ -65,6 +77,7 @@ server <- function(input, output) {
                  "Average heart rate", color = "red",
                  icon = icon("heart"))
     })
+    
     
 
 }
