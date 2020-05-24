@@ -1,0 +1,10 @@
+create_manifest("../OTworkout/", 
+                name = "Workout tracker", 
+                shortName = "Zhi's 30-day Workout Challenge", 
+                description = "What it does!", 
+                lang = "en-US", 
+                startUrl = "https://zhiyang.shinyapps.io/otworkout/", 
+                display = c("minimal-ui", "standalone", "fullscreen", "browser"), 
+                icon  = data.frame(src = "icon.png",
+                                    sizes = "80x80",
+                                    types = "image/png"))

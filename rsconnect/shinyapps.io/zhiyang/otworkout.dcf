@@ -5,6 +5,6 @@ account: zhiyang
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2334878
-bundleId: 3182618
+bundleId: 3185584
 url: https://zhiyang.shinyapps.io/otworkout/
-when: 1590266978.75613
+when: 1590362357.76064

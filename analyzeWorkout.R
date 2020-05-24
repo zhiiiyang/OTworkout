@@ -47,7 +47,7 @@ record_list <- lapply(comments, function(comment) {
 }) 
 
 records <- do.call(rbind, record_list)
-
+records[, c(2,3,4,5,6)] <- apply(records[, c(2,3,4,5,6)], 2, as.numeric)
 
 # Create test data.
 data <- data.frame(
@@ -74,4 +74,25 @@ data$label <- paste0(data$category, "\n value: ", data$count)
 data$category <- factor(data$category, levels = paste("Day", 1:30))
 
 
+# calories 
+calories <- data.frame(food = c("Boba tea", "Rice",
+                                "Instant noodles", "Chips",
+                                "Daily calories burn"),
+                       calories = c(550, 200, 470, 1200, 1600),
+                       imgs = c("imgs/Boba.png",
+                                "imgs/Rice.png",
+                                "imgs/Instant.png",
+                                "imgs/Chips.png",
+                                "imgs/Daily.png"),
+                       stringsAsFactors = FALSE)
 
+# day
+
+firstday <- as.Date("2020-05-20")
+ontrack <- ifelse(as.numeric(Sys.Date()-firstday+1) == nrow(records), 
+                  "on track", 
+                  paste("miss", as.numeric(Sys.Date()-firstday+1) - nrow(records), "days"))
+
+
+# icons 
+## https://icons8.com/icons/set/30-days
