@@ -2,7 +2,7 @@
   <a href="https://zhiyang.netlify.com/">
     <img src=https://zhiyang.netlify.com/img/zhi.png alt="Zhi" width=27>
   </a>
-  &nbsp;Workout auto-generator and workout analyzer &nbsp;
+  &nbsp;Workout auto-generator and analyzer &nbsp;
 </h1>
 
 <div align="center">
@@ -16,7 +16,7 @@ This #rstats project is dedicated to auto-generate workout plans and extract sta
 
 
 <p align="center">
-  <img src="www/screenshot.png" height="600">
+  <img src="www/screenshot.png" height="400">
 </p>
 
 
