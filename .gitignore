@@ -3,4 +3,6 @@
 .RData
 .Ruserdata
 deploy.R
+manifest.R
+generateWorkout.R
 .DS_Store

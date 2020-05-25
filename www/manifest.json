@@ -1,1 +1,51 @@
-["{\n  \"name\": \"Workout tracker\",\n  \"short_name\": \"Zhi's 30-day Workout Challenge\",\n  \"description\": \"What it does!\",\n  \"lang\": \"en-US\",\n  \"start_url\": \"https://zhiyang.shinyapps.io/otworkout/\",\n  \"display\": \"minimal-ui\",\n  \"background_color\": \"#000000\",\n  \"theme_color\": \"#0000ffff\",\n  \"icon\": [\n    {\n      \"src\": \"icon.png\",\n      \"sizes\": \"80x80\",\n      \"types\": \"image/png\"\n    }\n  ]\n}"]
+{
+  "name": "Workout Challenge",
+  "short_name": "Workout tracker",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "start_url": "/https://zhiyang.shinyapps.io/otworkout/",
+  "icons": [
+    {
+      "src": "icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "splash_pages": "splash.png"
+}

@@ -4,10 +4,9 @@ library(shinyWidgets)
 library(dplyr)
 
 source("analyzeWorkout.R")
-addResourcePath(prefix = 'imgs', directoryPath = 'imgs/')
 
 shiny::shinyApp(
-    ui = f7Page(
+    ui = f7Page(icon = "icons/icon-512x512.png", favicon = "icons/icon-72x72.png", manifest = "manifest.json",
         f7TabLayout(
             navbar = f7Navbar(
                 title = "Zhi's 30-day Workout Challenge",
@@ -27,7 +26,7 @@ shiny::shinyApp(
                         intensity = 10,
                         hover = TRUE,
                         f7SocialCard(
-                            author_img = "imgs/profile.jpg",
+                            author_img = "profile.jpg",
                             author = "Zhi",
                             date = Sys.Date(),
                             plotOutput("Plot1", height = "250px"),
@@ -77,10 +76,20 @@ shiny::shinyApp(
                 f7Tab(
                     tabName = "Today's task",
                     icon = f7Icon("calendar_today"),
-                    f7BlockTitle(title = "Completion status") %>% f7Align(side = "center"),
                     f7Card(
-                        title = "You haven't completed your workout yet!"
-                    ) %>% f7Skeleton(effect = "fade", duration = 3)
+                        title = "Completion status", 
+                        f7Button(label = ifelse(todaystatus=="no",
+                                                "Please uploaded your workout!",
+                                                "Well done!"), 
+                                 color = ifelse(todaystatus=="no",
+                                                "red",
+                                                "green"),
+                                 fill = FALSE),
+                        br(),
+                        f7Button(inputId = "go", "Show me more workouts!", 
+                                 color = "lightblue")
+                    ) %>% f7Skeleton(effect = "fade", duration = 1)
+                    
                 ), 
                 
                 f7Tab(
@@ -110,10 +119,10 @@ shiny::shinyApp(
         output$Plot1 <- renderImage({
             # A temp file to save the output.
             # This file will be removed later by renderImage
-            outfile <- file.create("imgs/ring.png")
+            outfile <- file.create("ring.png")
             
             # Generate the PNG
-            png("imgs/ring.png",width = 300*8, height = 200*8, 
+            png("ring.png",width = 300*8, height = 200*8, 
                 res = 72*20)
             p <- ggplot(data = data) +
                 geom_rect(aes(ymax=ymax-0.002, ymin=ymin+0.002, xmax=3, xmin=2, fill=category)) +
@@ -131,7 +140,7 @@ shiny::shinyApp(
             dev.off()
             
             # Return a list containing the filename
-            list(src = "imgs/ring.png",
+            list(src = "ring.png",
                  contentType = 'image/png',
                  width = 300,
                  height = 200)

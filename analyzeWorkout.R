@@ -79,11 +79,11 @@ calories <- data.frame(food = c("Boba tea", "Rice",
                                 "Instant noodles", "Chips",
                                 "Daily calories burn"),
                        calories = c(550, 200, 470, 1200, 1600),
-                       imgs = c("imgs/Boba.png",
-                                "imgs/Rice.png",
-                                "imgs/Instant.png",
-                                "imgs/Chips.png",
-                                "imgs/Daily.png"),
+                       imgs = c("www/Boba.png",
+                                "www/Rice.png",
+                                "www/Instant.png",
+                                "www/Chips.png",
+                                "www/Daily.png"),
                        stringsAsFactors = FALSE)
 
 # day
@@ -92,7 +92,9 @@ firstday <- as.Date("2020-05-20")
 ontrack <- ifelse(as.numeric(Sys.Date()-firstday+1) == nrow(records), 
                   "on track", 
                   paste("miss", as.numeric(Sys.Date()-firstday+1) - nrow(records), "days"))
-
+todaystatus <- ifelse(as.numeric(Sys.Date()-firstday + 2) == nrow(records),
+                      "yes",
+                      "no")
 
 # icons 
 ## https://icons8.com/icons/set/30-days
