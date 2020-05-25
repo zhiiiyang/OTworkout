@@ -6,7 +6,9 @@ library(dplyr)
 source("analyzeWorkout.R")
 
 shiny::shinyApp(
-    ui = f7Page(icon = "icons/icon-512x512.png", favicon = "icons/icon-72x72.png", manifest = "manifest.json",
+    ui = f7Page(icon = "icons/icon-128x128.png",
+                favicon = "icons/icon-512x512.png",
+                manifest = "manifest.json",
         f7TabLayout(
             navbar = f7Navbar(
                 title = "Zhi's 30-day Workout Challenge",
@@ -122,7 +124,7 @@ shiny::shinyApp(
             outfile <- file.create("ring.png")
             
             # Generate the PNG
-            png("ring.png",width = 300*8, height = 200*8, 
+            png("ring.png",width = 380*8, height = 200*8, 
                 res = 72*20)
             p <- ggplot(data = data) +
                 geom_rect(aes(ymax=ymax-0.002, ymin=ymin+0.002, xmax=3, xmin=2, fill=category)) +
@@ -142,7 +144,7 @@ shiny::shinyApp(
             # Return a list containing the filename
             list(src = "ring.png",
                  contentType = 'image/png',
-                 width = 300,
+                 width = 380,
                  height = 200)
         }, deleteFile = TRUE)
         

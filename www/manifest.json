@@ -1,11 +1,13 @@
 {
-  "name": "Workout Challenge",
-  "short_name": "Workout tracker",
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
+  "name": "Workout tracker",
+  "short_name": "Zhi's 30-day Workout Challenge",
+  "description": "What it does!",
+  "lang": "en-US",
+  "start_url": "https://zhiyang.shinyapps.io/otworkout/",
   "display": "standalone",
-  "start_url": "/https://zhiyang.shinyapps.io/otworkout/",
-  "icons": [
+  "background_color": "#000000",
+  "theme_color": "#0000ffff",
+  "icon": [
     {
       "src": "icons/icon-72x72.png",
       "sizes": "72x72",
@@ -46,6 +48,5 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ],
-  "splash_pages": "splash.png"
-}
+  ]
+} 
