@@ -35,17 +35,17 @@ shiny::shinyApp(
                             div(img(src = "ring.png", width = "100%"), style="text-align: center;"),
                             footer = tagList(
                                 f7PopoverTarget(f7Button(label = paste(30 - nrow(records), "days left"), 
-                                                         color = ifelse(todaystatus == "yes", "green", "pink"),
+                                                         color = ifelse(as.numeric(today-firstday + 1) - nrow(records) < 2, "lightblue", "orange"),
                                                          rounded = TRUE),
                                                 targetId = "days"),    
                                 
-                                    f7PopoverTarget(f7Button(label = ifelse(mean(records$time)<1000/30, "Workout longer!", "Time OK!"), 
-                                                        color = ifelse(mean(records$time)<1000/30, "pink", "green"),
+                                    f7PopoverTarget(f7Button(label = ifelse(mean(records$time)<1000/30, "Longer time!", "Time OK!"), 
+                                                        color = ifelse(mean(records$time)<1000/30, "orange", "lightblue"),
                                                         rounded = TRUE),
                                                 targetId = "time"),
                                 
-                                f7PopoverTarget(f7Button(label = ifelse(mean(records$calories)<7000/30,"Burn more calories!", "Calories OK!"), 
-                                                         color = ifelse(mean(records$calories)<7000/30, "pink", "green"),
+                                f7PopoverTarget(f7Button(label = ifelse(mean(records$calories)<7000/30,"More calories!", "Calories OK!"), 
+                                                         color = ifelse(mean(records$calories)<7000/30, "orange", "lightblue"),
                                                          rounded = TRUE),
                                                 targetId = "calories"),
                             )
@@ -116,11 +116,10 @@ shiny::shinyApp(
                     tabName = "Calories converter",
                     icon = f7Icon("zoom_in"),
                     active = FALSE,
-                    f7SmartSelect(
+                    f7Picker(
                         inputId = "food",
                         label = "Choose a food",
-                        choices = calories$food,
-                        openIn = "popup"
+                        choices = calories$food
                     ) %>% f7Card(),
                     f7Shadow(
                         intensity = 10,
@@ -155,9 +154,9 @@ shiny::shinyApp(
         observe({
             f7Popover(
                 targetId = "days",
-                content = ifelse(todaystatus == "yes", "Everything is on track", 
+                content = ifelse(as.numeric(today-firstday + 1) - nrow(records) < 2 , "Everything is on track", 
                                  sprintf("You've missed %s times of workout!", 
-                                         as.numeric(Sys.Date()-firstday + 1) - nrow(records))),
+                                         as.numeric(today-firstday + 1) - nrow(records))),
                 session
             )
         })
@@ -166,7 +165,7 @@ shiny::shinyApp(
             f7Popover(
                 targetId = "time",
                 content = ifelse(mean(records$time)<1000/30, 
-                                 sprintf("Averaged time (%s mins) < Target (%s mins).", round(mean(records$time)), round(1000/30)), 
+                                 sprintf("Averaged time (%s mins) is lower than target (%s mins).", round(mean(records$time)), round(1000/30)), 
                                  "Keep the good work!"),
                 session
             )
@@ -176,7 +175,7 @@ shiny::shinyApp(
             f7Popover(
                 targetId = "calories",
                 content = ifelse(mean(records$calories)<7000/30, 
-                                 sprintf("Averaged calories (%s cals) < Target (%s cals).", round(mean(records$calories)), round(7000/30)), 
+                                 sprintf("Averaged calories (%s cals) is lower than target (%s cals).", round(mean(records$calories)), round(7000/30)), 
                                  "Keep the good work!"),
                 session
             )

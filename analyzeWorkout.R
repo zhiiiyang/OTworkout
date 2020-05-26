@@ -4,6 +4,8 @@ library(zeallot)
 library(gh)
 library(ggplot2)
 library(lubridate)
+library(shinyMobile)
+library(shiny)
 
 #######################
 # process close issues 
@@ -12,13 +14,15 @@ issues_closed <- gh(
   "GET /repos/:owner/:repo/issues",
   owner = "zhiiiyang",
   repo = "OTworkout",
-  state = "closed"
+  state = "closed",
+  .token = Sys.getenv("GITHUB_PAT", "")
 )
 
 comments <- gh(
   "GET /repos/:owner/:repo/issues/comments",
   owner = "zhiiiyang",
-  repo = "OTworkout"
+  repo = "OTworkout",
+  .token = Sys.getenv("GITHUB_PAT", "")
 )
 
 
