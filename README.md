@@ -16,7 +16,7 @@ This #rstats project is dedicated to auto-generate workout plans and extract sta
 
 
 <p align="center">
-  <img src="www/screenshot.png" height="400">
+  <img src="www/screenshot.png" height="300">
 </p>
 
 
