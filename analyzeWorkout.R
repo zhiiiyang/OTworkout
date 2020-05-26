@@ -3,8 +3,11 @@ library(stringr)
 library(zeallot)
 library(gh)
 library(ggplot2)
+library(lubridate)
 
-# download close issues 
+#######################
+# process close issues 
+#######################
 issues_closed <- gh(
   "GET /repos/:owner/:repo/issues",
   owner = "zhiiiyang",
@@ -28,7 +31,10 @@ record_list <- lapply(comments, function(comment) {
   text <- tesseract::ocr(fig, engine = eng) 
   strings <- str_split(text, "\n")[[1]]
   
-  date <- strings[grep("2020", strings)]
+  date <- unlist(strsplit(strings[grep("2020", strings)], ", "))[2]
+  uploadtime <- sprintf("%s:%s",
+                        hour(with_tz(ymd_hms(comment$created_at), "America/Los_Angeles")),
+                        minute(with_tz(ymd_hms(comment$created_at), "America/Los_Angeles")))
   
   # return(calories_points)
   c(calories, spalshpoints) %<-% str_split(strings[9], " ")[[1]]
@@ -42,13 +48,32 @@ record_list <- lapply(comments, function(comment) {
   distance <- strings[grep("MILES STEPS", strings)-1]
   c(miles, steps) %<-% str_split(distance, " ")[[1]]
 
-  return(data.frame(date, time, calories, spalshpoints, hr, maxhr, miles, steps,
+  return(data.frame(date, uploadtime, 
+                    time, calories = as.numeric(calories), 
+                    spalshpoints = as.numeric(spalshpoints), hr =as.numeric(hr), 
+                    maxhr = as.numeric(maxhr), miles, steps,
                     stringsAsFactors = FALSE) )
 }) 
 
 records <- do.call(rbind, record_list)
-records[, c(2,3,4,5,6)] <- apply(records[, c(2,3,4,5,6)], 2, as.numeric)
 
+####################
+# generate timeline
+####################
+
+timeline <- lapply(nrow(records):1, function(i){
+  f7TimelineItem("",
+                 date = records$date[i],
+                 card = TRUE,
+                 time = records$uploadtime[i],
+                 title = sprintf("Time: %s min", round(records$time[i])),
+                 subtitle = sprintf("%s calories", round(records$calories[i])),
+                 side = "right")
+}) %>% do.call(tagList, .)
+
+####################
+# generate ring plot 
+####################
 # Create test data.
 data <- data.frame(
   category=paste("Day", 1:30),
@@ -73,7 +98,41 @@ data$label <- paste0(data$category, "\n value: ", data$count)
 # Make the plot
 data$category <- factor(data$category, levels = paste("Day", 1:30))
 
+# A temp file to save the output.
+# This file will be removed later by renderImage
+outfile <- file.create("www/ring.png")
 
+# Generate the PNG
+png("www/ring.png",width = 200*5, height = 150*5, 
+    res = 72*20)
+p <- ggplot(data = data) +
+  geom_rect(aes(ymax=ymax-0.002, ymin=ymin+0.002, xmax=3, xmin=2, fill=category)) +
+  geom_text( x=0, y = 0, 
+             label = paste0(nrow(records),"\nCompleted"), 
+             size=1.5) + 
+  scale_fill_manual(values = c(hcl.colors(30, palette = "Temp", rev = TRUE)[1:nrow(records)],
+                               rep("gray95", 30 - nrow(records))))+
+  coord_polar(theta="y") +
+  xlim(c(0, 3)) +
+  theme_void() +            
+  theme(legend.position = "none",
+        plot.margin = unit(c(-0.05,0,-0.05,0), "inches"))
+print(p)
+dev.off()
+
+
+########################
+# generate ring plot 2
+########################
+
+liquid <- data.frame(value = c(length(issues_closed)/30, sum(records$time)/1000, sum(records$calories)/7000),
+                     color = c("darkturquoise", "limegreen", "crimson"),
+                     legend = c("30 workouts", "1,000 mins", "7,000 calories (~ 2lb fat)"))
+
+
+########################
+# generate food units 
+########################
 # calories 
 calories <- data.frame(food = c("Boba tea", "Rice",
                                 "Instant noodles", "Chips",
@@ -88,11 +147,12 @@ calories <- data.frame(food = c("Boba tea", "Rice",
 
 # day
 
-firstday <- as.Date("2020-05-20")
-ontrack <- ifelse(as.numeric(Sys.Date()-firstday+1) == nrow(records), 
+firstday <- as.Date("2020-05-19")
+today <- as_date(with_tz(Sys.time(), "America/Los_Angeles"))
+ontrack <- ifelse(as.numeric(today-firstday+1) == nrow(records), 
                   "on track", 
-                  paste("miss", as.numeric(Sys.Date()-firstday+1) - nrow(records), "days"))
-todaystatus <- ifelse(as.numeric(Sys.Date()-firstday + 2) == nrow(records),
+                  paste("miss", as.numeric(today-firstday+1) - nrow(records), "days"))
+todaystatus <- ifelse(as.numeric(today-firstday + 1) == nrow(records),
                       "yes",
                       "no")
 

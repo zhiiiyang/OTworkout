@@ -2,6 +2,7 @@ library(shiny)
 library(shinyMobile)
 library(shinyWidgets)
 library(dplyr)
+library(echarts4r)
 
 source("analyzeWorkout.R")
 
@@ -18,8 +19,8 @@ shiny::shinyApp(
                 right_panel = FALSE
             ),
             f7Tabs(
-                animated = TRUE,
-                #swipeable = TRUE,
+                swipeable = TRUE,
+                animated = FALSE,
                 f7Tab(
                     tabName = "Progress",
                     icon = f7Icon("goforward_30"),
@@ -31,18 +32,22 @@ shiny::shinyApp(
                             author_img = "profile.jpg",
                             author = "Zhi",
                             date = Sys.Date(),
-                            plotOutput("Plot1", height = "250px"),
+                            div(img(src = "ring.png", width = "100%"), style="text-align: center;"),
                             footer = tagList(
-                                f7Button(label = paste(30 - nrow(records), "days left"), color = "blue",
-                                         shadow = TRUE, rounded = TRUE, size = "small", fill = FALSE),
-                                f7Button(label = "Time", 
-                                         color = ifelse(mean(records$time)<1000/30, "pink", "green"),
-                                         shadow = TRUE, rounded = TRUE, size = "small", 
-                                         fill = ifelse(mean(records$time)<1000/30, TRUE, FALSE)),
-                                f7Button(label = "Calories", 
-                                         color = ifelse(mean(records$calories)<7000/30,"pink", "green"),
-                                         shadow = TRUE, rounded = TRUE, size = "small", 
-                                         fill = ifelse(mean(records$calories)<7000/30, TRUE, FALSE))
+                                f7PopoverTarget(f7Button(label = paste(30 - nrow(records), "days left"), 
+                                                         color = ifelse(todaystatus == "yes", "green", "pink"),
+                                                         rounded = TRUE),
+                                                targetId = "days"),    
+                                
+                                    f7PopoverTarget(f7Button(label = ifelse(mean(records$time)<1000/30, "Workout longer!", "Time OK!"), 
+                                                        color = ifelse(mean(records$time)<1000/30, "pink", "green"),
+                                                        rounded = TRUE),
+                                                targetId = "time"),
+                                
+                                f7PopoverTarget(f7Button(label = ifelse(mean(records$calories)<7000/30,"Burn more calories!", "Calories OK!"), 
+                                                         color = ifelse(mean(records$calories)<7000/30, "pink", "green"),
+                                                         rounded = TRUE),
+                                                targetId = "calories"),
                             )
                         ) 
                     ),
@@ -58,52 +63,65 @@ shiny::shinyApp(
                         paste0("Burned ", round(sum(records$calories)/70), "% of 7,000 calories (~ 2lb fat)"),
                         f7Progress(id = "p3", value = sum(records$calories)/70, color = "red")
                     ),
+                    
+                    
                     f7Card(
-                        paste0("Average Heart Rate Zone ", 
-                               round(mean(records$hr)/189*100), "% : ",
+                        paste0(sprintf("Average Heart Rate Zone [%s%%, %s%%]: ", round(min(records$hr)/189*100), round(max(records$hr)/189*100)),
                                ifelse(mean(records$hr)/189*100 > 70, 
                                                                   "Aerobic ", "Weight control ")),
                         f7Progress(id = "p4", value = mean(records$hr)/189*100, 
                                    color = ifelse(mean(records$hr)/189*100 > 70, "orange", "blue")),
                     ),
                     f7Card(
-                        paste0("Maximum Heart Rate Zone ", 
-                               round(mean(records$maxhr)/189*100), "% : ",
+                        paste0(sprintf("Maximum Heart Rate Zone [%s%%, %s%%]: ", round(min(records$maxhr)/189*100), round(max(records$maxhr)/189*100)),
                                ifelse(mean(records$maxhr)/189*100 > 84, 
                                                                   "Anaerobic ", "Aerobic ")),
                         f7Progress(id = "p5", value = mean(records$maxhr)/189*100, 
                                    color = ifelse(mean(records$hr)/189*100 > 84, "red", "orange")),
                     )
                 ),
+                
+                
                 f7Tab(
                     tabName = "Today's task",
                     icon = f7Icon("calendar_today"),
-                    f7Card(
-                        title = "Completion status", 
-                        f7Button(label = ifelse(todaystatus=="no",
-                                                "Please uploaded your workout!",
-                                                "Well done!"), 
-                                 color = ifelse(todaystatus=="no",
-                                                "red",
-                                                "green"),
-                                 fill = FALSE),
-                        br(),
-                        f7Button(inputId = "go", "Show me more workouts!", 
-                                 color = "lightblue")
-                    ) %>% f7Skeleton(effect = "fade", duration = 1)
+                    f7SocialCard(
+                        author_img = "profile.jpg",
+                        author = "Zhi",
+                        date = Sys.Date(),
+                        liquid %>% 
+                            e_charts() %>% 
+                            e_liquid(value, color = color,
+                                     label = list(fontSize = 50),
+                                     radius = "90%"),
+                        footer = tagList(
+                            f7Link(label = "Submit workout", src = sprintf("https://github.com/zhiiiyang/OTworkout/issues/%s", nrow(records)+2), external = TRUE),
+                            f7Link(label = "Start workout", src = "https://apps.apple.com/us/app/orangetheory-fitness/id1424351827", external = TRUE)
+                        )
+                    ),
                     
+
+                    f7Card(
+                        f7Button(inputId = "suggestions", "Click here for suggestions!",                                 
+                                 color = "lightblue")
+                    ),
+                    
+                    f7Card(
+                        f7Timeline(timeline,
+                                   sides = TRUE)
+                    )
                 ), 
                 
                 f7Tab(
                     tabName = "Calories converter",
                     icon = f7Icon("zoom_in"),
                     active = FALSE,
-                    f7Select(
+                    f7SmartSelect(
                         inputId = "food",
                         label = "Choose a food",
                         choices = calories$food,
-                        width = "100%"
-                    ),
+                        openIn = "popup"
+                    ) %>% f7Card(),
                     f7Shadow(
                         intensity = 10,
                         f7Card(
@@ -116,45 +134,52 @@ shiny::shinyApp(
             )
         )
     ),
-    server = function(input, output) {
-        
-        output$Plot1 <- renderImage({
-            # A temp file to save the output.
-            # This file will be removed later by renderImage
-            outfile <- file.create("ring.png")
-            
-            # Generate the PNG
-            png("ring.png",width = 380*8, height = 200*8, 
-                res = 72*20)
-            p <- ggplot(data = data) +
-                geom_rect(aes(ymax=ymax-0.002, ymin=ymin+0.002, xmax=3, xmin=2, fill=category)) +
-                geom_text( x=0, y = 0, 
-                           label = paste0(nrow(records),"\nCompleted"), 
-                           size=1.5) + 
-                scale_fill_manual(values = c(hcl.colors(30, palette = "Temp", rev = TRUE)[1:nrow(records)],
-                                             rep("gray95", 30 - nrow(records))))+
-                coord_polar(theta="y") +
-                xlim(c(0, 3)) +
-                theme_void() +            
-                theme(legend.position = "none",
-                      plot.margin = unit(c(-0.3,-0.3,-0.3,-0.3), "cm"))
-            print(p)
-            dev.off()
-            
-            # Return a list containing the filename
-            list(src = "ring.png",
-                 contentType = 'image/png',
-                 width = 380,
-                 height = 200)
-        }, deleteFile = TRUE)
-        
-        output$progress <- renderText({
-            length(issues_closed)/30
-        })
+    server = function(input, output, session) { 
         
         output$frequency <- renderText({
             freq <- sum(as.numeric(records$calories))/calories$calories[which(calories$food==input$food)]
             paste0("After ", nrow(records), " workouts, you have burned calories same as ", round(freq, 1), " units")
+        })
+        
+        
+        observeEvent(input$suggestions, {
+            f7Notif(
+                title = "For the next workout",
+                icon = f7Icon("hand_point_right"),
+                text = sprintf("You need to work out for > %s mins and burn > %s calories", 
+                               round((1000-sum(records$time))/(30-nrow(records))),
+                               round((7000-sum(records$calories))/(30-nrow(records))))
+            )
+        })
+        
+        observe({
+            f7Popover(
+                targetId = "days",
+                content = ifelse(todaystatus == "yes", "Everything is on track", 
+                                 sprintf("You've missed %s times of workout!", 
+                                         as.numeric(Sys.Date()-firstday + 1) - nrow(records))),
+                session
+            )
+        })
+        
+        observe({
+            f7Popover(
+                targetId = "time",
+                content = ifelse(mean(records$time)<1000/30, 
+                                 sprintf("Averaged time (%s mins) < Target (%s mins).", round(mean(records$time)), round(1000/30)), 
+                                 "Keep the good work!"),
+                session
+            )
+        })
+        
+        observe({
+            f7Popover(
+                targetId = "calories",
+                content = ifelse(mean(records$calories)<7000/30, 
+                                 sprintf("Averaged calories (%s cals) < Target (%s cals).", round(mean(records$calories)), round(7000/30)), 
+                                 "Keep the good work!"),
+                session
+            )
         })
         
         output$Plot2 <- renderImage({
@@ -165,3 +190,5 @@ shiny::shinyApp(
         }, deleteFile = FALSE)
     }
 )
+
+# preview_mobile("https://zhiyang.shinyapps.io/otworkout/", device="iphone8")
