@@ -15,6 +15,10 @@
 This #rstats project is dedicated to auto-generate workout plans and extract statistics from Orange Theory workout screenshots. This Shiny app records the number of completed workout via closed issues and reads from the workout screenshots for duration time, calories, heart rates and etc.   
 
 
+<p align="center">
+  <img src="www/newscreenshot.png" height="400">
+</p>
+
 
 <!--
 Quick Link 
