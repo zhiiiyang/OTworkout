@@ -1,15 +1,10 @@
-library(tesseract)
-library(stringr)
-library(zeallot)
-library(gh)
-library(ggplot2)
-library(lubridate)
-library(shinyMobile)
-library(shiny)
 
 #######################
 # process close issues 
 #######################
+firstday <- as.Date("2020-05-19")
+
+
 issues_closed <- gh(
   "GET /repos/:owner/:repo/issues",
   owner = "zhiiiyang",
@@ -35,8 +30,9 @@ record_list <- lapply(comments, function(comment) {
   text <- tesseract::ocr(fig, engine = eng) 
   strings <- str_split(text, "\n")[[1]]
   
-  date <- unlist(strsplit(strings[grep("2020", strings)], ", "))[2]
-  uploadtime <- sprintf("%s:%s",
+  issue <- as.numeric(gsub("https://api.github.com/repos/zhiiiyang/OTworkout/issues/", "", comment$issue_url))
+  date <- format(firstday + issue - 2, "%m/%d")
+  uploadtime <- sprintf("%02s:%02s",
                         hour(with_tz(ymd_hms(comment$created_at), "America/Los_Angeles")),
                         minute(with_tz(ymd_hms(comment$created_at), "America/Los_Angeles")))
   
@@ -49,17 +45,23 @@ record_list <- lapply(comments, function(comment) {
   heartrates <- strings[grep("AVERAGE HEART RATE", strings)-1]
   c(hr, maxhr) %<-% str_split(heartrates, " ")[[1]]
 
-  distance <- strings[grep("MILES STEPS", strings)-1]
-  c(miles, steps) %<-% str_split(distance, " ")[[1]]
+  #distance <- strings[grep("MILES STEPS", strings)-1]
+  #c(miles, steps) %<-% str_split(distance, " ")[[1]]
 
-  return(data.frame(date, uploadtime, 
+  return(data.frame(date, issue, uploadtime, 
                     time, calories = as.numeric(calories), 
                     spalshpoints = as.numeric(spalshpoints), hr =as.numeric(hr), 
-                    maxhr = as.numeric(maxhr), miles, steps,
+                    maxhr = as.numeric(maxhr), 
                     stringsAsFactors = FALSE) )
 }) 
 
 records <- do.call(rbind, record_list)
+
+records_by_day <- records %>% group_by(date) %>%
+  summarize(calories = sum(calories),
+            time = sum(time),
+            hr = max(hr), 
+            maxhr = max(maxhr))
 
 ####################
 # generate timeline
@@ -107,13 +109,13 @@ data$category <- factor(data$category, levels = paste("Day", 1:30))
 outfile <- file.create("www/ring.png")
 
 # Generate the PNG
-png("www/ring.png",width = 200*5, height = 150*5, 
-    res = 72*20)
+png("www/ring.png",width = 200*30, height = 150*30, 
+    res = 72*100)
 p <- ggplot(data = data) +
   geom_rect(aes(ymax=ymax-0.002, ymin=ymin+0.002, xmax=3, xmin=2, fill=category)) +
   geom_text( x=0, y = 0, 
-             label = paste0(nrow(records),"\nCompleted"), 
-             size=1.5) + 
+             label = paste0("Day ", length(unique(records$date))), 
+             size=1) + 
   scale_fill_manual(values = c(hcl.colors(30, palette = "Temp", rev = TRUE)[1:nrow(records)],
                                rep("gray95", 30 - nrow(records))))+
   coord_polar(theta="y") +
