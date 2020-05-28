@@ -39,7 +39,14 @@ record_list <- lapply(comments, function(comment) {
   # return(calories_points)
   c(calories, spalshpoints) %<-% str_split(strings[9], " ")[[1]]
 
-  c(min, second) %<-%  str_extract_all(strings[grep("2020", strings)+1], "(\\d)+")[[1]] 
+  timedigits <- as.numeric(str_extract_all(strings[grep("2020", strings)+1], "(\\d)+")[[1]] )
+  if(length(timedigits)==3){
+    c(min, second) %<-%  c(timedigits[1]*60+timedigits[2],
+                           timedigits[3])    
+  } else{
+    c(min, second) %<-%  timedigits 
+  }
+
   time <- as.numeric(min) + as.numeric(second)/60
 
   heartrates <- strings[grep("AVERAGE HEART RATE", strings)-1]
@@ -67,15 +74,7 @@ records_by_day <- records %>% group_by(date) %>%
 # generate timeline
 ####################
 
-timeline <- lapply(nrow(records):1, function(i){
-  f7TimelineItem("",
-                 date = records$date[i],
-                 card = TRUE,
-                 time = records$uploadtime[i],
-                 title = sprintf("Time: %s min", round(records$time[i])),
-                 subtitle = sprintf("%s calories", round(records$calories[i])),
-                 side = "right")
-}) %>% do.call(tagList, .)
+
 
 ####################
 # generate ring plot 
@@ -109,7 +108,7 @@ data$category <- factor(data$category, levels = paste("Day", 1:30))
 outfile <- file.create("www/ring.png")
 
 # Generate the PNG
-png("www/ring.png",width = 200*30, height = 150*30, 
+png("www/ring.png",width = 200*30, height = 140*30, 
     res = 72*100)
 p <- ggplot(data = data) +
   geom_rect(aes(ymax=ymax-0.002, ymin=ymin+0.002, xmax=3, xmin=2, fill=category)) +
