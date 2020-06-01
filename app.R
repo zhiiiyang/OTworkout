@@ -64,7 +64,7 @@ ui = f7Page(iosTranslucentBars = TRUE,
                 
                 f7Card(
                     f7Swipeout(
-                        tag = f7ListItem("Click me if you don't feel like doing the workout today!"),
+                        tag = f7ListItem("Swipe right if you don't feel like doing it today!"),
                         side = "left",
                         f7SwipeoutItem(id = "suggestions", color = "pink", "For tomorrow"),
                         f7SwipeoutItem(id = "confirm", color = "green", "Let's do it!"),
@@ -73,6 +73,10 @@ ui = f7Page(iosTranslucentBars = TRUE,
                 ),
                 
             ), 
+            
+            #######
+            # TAB 2
+            #######   
             
             f7Tab(
                 tabName = 'Videos',
@@ -145,8 +149,8 @@ ui = f7Page(iosTranslucentBars = TRUE,
                                                     rounded = TRUE),
                                             targetId = "time"),
                             
-                            f7PopoverTarget(f7Button(label = ifelse(mean(records_by_day$calories)<7000/30,"More calories!", "Calories OK!"), 
-                                                     color = ifelse(mean(records_by_day$calories)<7000/30, "orange", "lightblue"),
+                            f7PopoverTarget(f7Button(label = ifelse(mean(records_by_day$calories)<10500/30,"More calories!", "Calories OK!"), 
+                                                     color = ifelse(mean(records_by_day$calories)<10500/30, "orange", "lightblue"),
                                                      rounded = TRUE),
                                             targetId = "calories"),
                         )
@@ -161,7 +165,7 @@ ui = f7Page(iosTranslucentBars = TRUE,
                     f7Progress(id = "p2", value = sum(records$time)/10, color = "lightblue"),
                 ),
                 f7Card(
-                    paste0("Burned ", round(sum(records$calories)/70), "% of 7,000 calories (~ 2lb fat)"),
+                    paste0("Burned ", round(sum(records$calories)/70), "% of 10,500 calories (~ 3lb fat)"),
                     f7Progress(id = "p3", value = sum(records$calories)/70, color = "red")
                 ),
                 
@@ -183,7 +187,7 @@ ui = f7Page(iosTranslucentBars = TRUE,
             ),
             
             #######
-            # TAB 3
+            # TAB 4
             #######
             f7Tab(
                 tabName = "History",
@@ -335,8 +339,8 @@ server = function(input, output, session) {
     observe({
         f7Popover(
             targetId = "calories",
-            content = ifelse(mean(records_by_day$calories)<7000/30, 
-                             sprintf("Averaged calories (%s cals) is lower than target (%s cals).", round(mean(records$calories)), round(7000/30)), 
+            content = ifelse(mean(records_by_day$calories)<10500/30, 
+                             sprintf("Averaged calories (%s cals) is lower than target (%s cals).", round(mean(records$calories)), round(10500/30)), 
                              "Keep the good work!"),
             session
         )
@@ -344,11 +348,12 @@ server = function(input, output, session) {
     
     # TAB2
     output$calories_plot <- renderEcharts4r({
+        records_by_day$time <- round(records_by_day$time)
         records_by_day %>%
             e_chart(date) %>%
             e_effect_scatter(calories, time, symbol = "pin", name = "Calories") %>%
             e_scatter(time, symbol = ea_icons("clock"), symbol_size = 20, y_index = 1, name = "Time") %>%
-            e_mark_line(data = list(yAxis = round((7000-sum(records_by_day$calories))/(30-nrow(records_by_day)))), title = "Target") %>%
+            e_mark_line(data = list(yAxis = round((10500-sum(records_by_day$calories))/(30-nrow(records_by_day)))), title = "Target") %>%
             e_tooltip(trigger = "axis") %>%
             e_y_axis(min = 0) 
         
