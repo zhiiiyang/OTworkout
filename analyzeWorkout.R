@@ -1,3 +1,4 @@
+target_cal <- 3500*2.25
 
 #######################
 # process close issues 
@@ -23,61 +24,101 @@ comments <- gh(
 
 url_pattern <- "http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
 
-record_list <- lapply(comments, function(comment) {
+records <- c()
+for (comment in comments){
   fig <- str_extract(comment$body, url_pattern)
   fig <- gsub(")","",fig)
-  eng <- tesseract("eng")
-  text <- tesseract::ocr(fig, engine = eng) 
-  strings <- str_split(text, "\n")[[1]]
   
   issue <- as.numeric(gsub("https://api.github.com/repos/zhiiiyang/OTworkout/issues/", "", comment$issue_url))
   date <- format(firstday + issue - 2, "%m/%d")
+  
   uploadtime <- sprintf("%02s:%02s",
                         hour(with_tz(ymd_hms(comment$created_at), "America/Los_Angeles")),
                         minute(with_tz(ymd_hms(comment$created_at), "America/Los_Angeles")))
   
-  # return(calories_points)
-  c(calories, spalshpoints) %<-% str_split(strings[9], " ")[[1]]
-
-  timedigits <- as.numeric(str_extract_all(strings[grep("2020", strings)+1], "(\\d)+")[[1]] )
-  if(length(timedigits)==3){
-    c(min, second) %<-%  c(timedigits[1]*60+timedigits[2],
-                           timedigits[3])    
-  } else{
-    c(min, second) %<-%  timedigits 
+  cal_points <- image_read(fig) %>%
+    image_crop('828x110+0+680') %>%
+    tesseract::ocr() %>%
+    str_extract_all("[0-9]+") %>%
+    first(default = NULL) %>%
+    as.numeric()
+  
+  if(length(cal_points)==2){
+    c(calories, spalshpoints) %<-% cal_points
+  } else {
+    c(calories, spalshpoints) %<-% c(0, 0)
   }
-
-  time <- as.numeric(min) + as.numeric(second)/60
-
-  heartrates <- strings[grep("AVERAGE HEART RATE", strings)-1]
-  c(hr, maxhr) %<-% str_split(heartrates, " ")[[1]]
-
-  #distance <- strings[grep("MILES STEPS", strings)-1]
-  #c(miles, steps) %<-% str_split(distance, " ")[[1]]
-
-  return(data.frame(date, issue, uploadtime, 
-                    time, calories = as.numeric(calories), 
-                    spalshpoints = as.numeric(spalshpoints), hr =as.numeric(hr), 
-                    maxhr = as.numeric(maxhr), 
-                    stringsAsFactors = FALSE) )
-}) 
-
-records <- do.call(rbind, record_list)
+  
+  hour <- image_read(fig) %>%
+    image_crop('340x80+0+160') %>%
+    tesseract::ocr() %>%
+    gsub("[\r\n]", "", .) %>%
+    str_extract_all("([0-9]+)h") %>% 
+    first(default = NULL) %>%
+    gsub("h","", .) %>%
+    as.numeric()
+  
+  min <- image_read(fig) %>%
+    image_crop('340x80+0+160') %>%
+    tesseract::ocr() %>%
+    gsub("[\r\n]", "", .) %>%
+    str_extract_all("([0-9]+)m") %>% 
+    first(default = NULL) %>%
+    gsub("m","", .) %>%
+    as.numeric()
+  
+  if(length(hour)>0){
+    time <- hour*60 + min
+  } else {
+    time <- min
+  }
+  
+  # heart rates 
+  image_read(fig) %>%
+    image_crop('828x80+0+1030') %>%
+    image_ocr() %>%
+    str_extract_all("([0-9]+)") %>% 
+    first(default = NULL) %>%
+    as.numeric() -> heartrates
+  
+  if(length(heartrates)==2){
+    c(hr, maxhr) %<-% heartrates
+  } else {
+    c(hr, maxhr) %<-% c(0, 0)
+  }
+  
+  records <- rbind(records,
+                       data.frame(date, issue, uploadtime, 
+                                  time, calories = as.numeric(calories), 
+                                  spalshpoints = as.numeric(spalshpoints), hr =as.numeric(hr), 
+                                  maxhr = as.numeric(maxhr), 
+                                  stringsAsFactors = FALSE) )
+}
 
 records_by_day <- records %>% group_by(date) %>%
-  summarize(calories = sum(calories),
-            time = sum(time),
+  summarize(Freq = n(), 
+            Calories = sum(calories),
+            Time = sum(time),
             hr = max(hr), 
-            maxhr = max(maxhr))
+            maxhr = max(maxhr)) %>%
+  rename(Date = date) %>%
+  mutate(cal_prev = percent((Calories - lag(Calories, default = 0))/Calories, digits = 0)) 
+
+
+
+########################
+# TAB 1: liquid
+########################
+
+liquid <- data.frame(value = c(length(issues_closed)/30, sum(records$time)/1000, sum(records$calories)/7000),
+                     color = c("darkturquoise", "limegreen", "crimson"),
+                     legend = c("30 workouts", "1,000 mins", "7,000 calories (~ 2lb fat)"))
+
+liquid <- liquid[order(liquid$value, decreasing = TRUE),]
+
 
 ####################
-# generate timeline
-####################
-
-
-
-####################
-# generate ring plot 
+# TAB 3: ring plot
 ####################
 # Create test data.
 data <- data.frame(
@@ -113,10 +154,10 @@ png("www/ring.png",width = 200*30, height = 140*30,
 p <- ggplot(data = data) +
   geom_rect(aes(ymax=ymax-0.002, ymin=ymin+0.002, xmax=3, xmin=2, fill=category)) +
   geom_text( x=0, y = 0, 
-             label = paste0("Day ", length(unique(records$date))), 
+             label = paste0("Day ", nrow(records_by_day)), 
              size=1) + 
-  scale_fill_manual(values = c(hcl.colors(30, palette = "Temp", rev = TRUE)[1:nrow(records)],
-                               rep("gray95", 30 - nrow(records))))+
+  scale_fill_manual(values = c(hcl.colors(30, palette = "Temp", rev = TRUE)[1:nrow(records_by_day)],
+                               rep("gray95", 30 - nrow(records_by_day))))+
   coord_polar(theta="y") +
   xlim(c(0, 3)) +
   theme_void() +            
@@ -126,17 +167,28 @@ print(p)
 dev.off()
 
 
-########################
-# generate ring plot 2
-########################
+####################
+# TAB 3: buttoms
+####################
+today <- as_date(with_tz(Sys.time(), "America/Los_Angeles"))
+ontrack <- ifelse(as.numeric(today-firstday+1) == nrow(records), 
+                  "on track", 
+                  paste("miss", as.numeric(today-firstday+1) - nrow(records), "days"))
+todaystatus <- ifelse(as.numeric(today-firstday + 1) == nrow(records),
+                      "yes",
+                      "no")
 
-liquid <- data.frame(value = c(length(issues_closed)/30, sum(records$time)/1000, sum(records$calories)/7000),
-                     color = c("darkturquoise", "limegreen", "crimson"),
-                     legend = c("30 workouts", "1,000 mins", "7,000 calories (~ 2lb fat)"))
+buttom_df <- data.frame(value = c(as.numeric(today-firstday + 1) - length(unique(records$issue)) < 2,
+                                  mean(records_by_day$Time)<1000/30, 
+                                  mean(records_by_day$Calories)<7000/30))
+buttom_df$color <- sapply(buttom_df$value, function(x) ifelse(x==TRUE,"orange", "lightblue"))
+
+# time 
+buttom_df$label[1] 
 
 
 ########################
-# generate food units 
+# TAB 5
 ########################
 # calories 
 calories <- data.frame(food = c("Boba tea", "Rice",
@@ -150,16 +202,7 @@ calories <- data.frame(food = c("Boba tea", "Rice",
                                 "www/Daily.png"),
                        stringsAsFactors = FALSE)
 
-# day
 
-firstday <- as.Date("2020-05-19")
-today <- as_date(with_tz(Sys.time(), "America/Los_Angeles"))
-ontrack <- ifelse(as.numeric(today-firstday+1) == nrow(records), 
-                  "on track", 
-                  paste("miss", as.numeric(today-firstday+1) - nrow(records), "days"))
-todaystatus <- ifelse(as.numeric(today-firstday + 1) == nrow(records),
-                      "yes",
-                      "no")
 
 # icons 
 ## https://icons8.com/icons/set/30-days

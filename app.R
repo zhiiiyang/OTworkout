@@ -11,9 +11,10 @@ library(ggplot2)
 library(lubridate)
 library(echarts4r.assets)
 library(waiter)
+library(magick)
+library(formattable)
 
 source("analyzeWorkout.R")
-
 
 ui = f7Page(iosTranslucentBars = TRUE,
             hideTabsOnPageScroll = TRUE,
@@ -35,22 +36,25 @@ ui = f7Page(iosTranslucentBars = TRUE,
             right_panel = FALSE
         ),
 
+        
         f7Tabs(
             swipeable = TRUE,
             animated = FALSE,
             #######
             # TAB 1
             #######
-            
+
             f7Tab(
                 tabName = "Today's task",
                 icon = f7Icon("calendar_today"),
                 active = TRUE,
                 
+                #f7Table(records, card = TRUE),
+                
                 f7SocialCard(
                     author_img = "profile.jpg",
-                    author = "Zhi",
-                    date = Sys.Date(),
+                    authOr = "Zhi",
+                    date = as.Date(with_tz(Sys.Date(), "America/Los_Angeles")),
                     liquid %>% 
                         e_charts() %>% 
                         e_liquid(value, color = color,
@@ -83,15 +87,23 @@ ui = f7Page(iosTranslucentBars = TRUE,
                 icon = f7Icon("videocam_fill"),
                 
                 f7Card(
+                    title = "Workout",
+                    "Here are all your favourite videos.",
+                    img = "https://i1.hdslb.com/bfs/archive/7e031b649d8bb61bf2da8db729380a289b02d9d2.jpg_560x350.jpg",
+                    footer = tagList(
+                        f7Link(label = "Arm", src = "https://www.bilibili.com/video/BV1W7411c7rH", external = TRUE),
+                        f7Link(label = "Body", src = "https://www.bilibili.com/video/BV1XJ411x7yz", external = TRUE)
+                    )
+                ),
+                
+                f7Card(
                     title = "Bilibili",
                     "Here are all the inspirational vidoes from Bilibili.",
                     img = "https://esportsobserver.com/wp-content/uploads/2020/04/Bilibili-Investment.jpg",
                     footer = tagList(
-                        f7Link(label = "1", src = "https://www.bilibili.com/video/BV1W7411c7rH", external = TRUE),
-                        f7Link(label = "2", src = "https://www.bilibili.com/video/BV1XJ411x7yz", external = TRUE),
-                        f7Link(label = "3", src = "https://www.bilibili.com/video/BV1YK4y1C7CU", external = TRUE),
-                        f7Link(label = "4", src = "https://www.bilibili.com/video/BV1Nf4y1U7Av", external = TRUE),
-                        f7Link(label = "5", src = "https://www.bilibili.com/video/BV18k4y167qH", external = TRUE),
+                        f7Link(label = "Dove", src = "https://www.bilibili.com/video/BV1YK4y1C7CU", external = TRUE),
+                        f7Link(label = "Dang", src = "https://www.bilibili.com/video/BV1Nf4y1U7Av", external = TRUE),
+                        f7Link(label = "Bro", src = "https://www.bilibili.com/video/BV18k4y167qH", external = TRUE),
                     )
                 ),
                 
@@ -100,31 +112,29 @@ ui = f7Page(iosTranslucentBars = TRUE,
                     "Here are Pamela Reif's workout videos.",
                     img = "https://i.ytimg.com/vi/Y2eOW7XYWxc/maxresdefault.jpg",
                     footer = tagList(
-                        f7Link(label = "1", src = "https://www.youtube.com/watch?v=Q-vuR4PJh2c", external = TRUE),
-                        f7Link(label = "2", src = "https://www.youtube.com/watch?v=RqfkrZA_ie0", external = TRUE),
-                        f7Link(label = "3", src = "https://www.youtube.com/watch?v=UBMk30rjy0o", external = TRUE),
-                        f7Link(label = "4", src = "https://www.youtube.com/watch?v=1f8yoFFdkcY", external = TRUE),
-                        f7Link(label = "5", src = "https://www.youtube.com/watch?v=Fu_oExrPX68", external = TRUE),
+                        f7Link(label = "Sixpack", src = "https://www.youtube.com/watch?v=Q-vuR4PJh2c", external = TRUE),
+                        f7Link(label = "Booty", src = "https://www.youtube.com/watch?v=RqfkrZA_ie0", external = TRUE),
+                        f7Link(label = "ABS", src = "https://www.youtube.com/watch?v=1f8yoFFdkcY", external = TRUE),
+                        f7Link(label = "Leg", src = "https://www.youtube.com/watch?v=Fu_oExrPX68", external = TRUE),
                     )
                 ),
-                
 
                 f7Card(
                     title = "Muscle Watching's YouTube channel",
                     "Here are Muscle Watching's workout videos.",
                     img = "https://i.pinimg.com/originals/30/ef/99/30ef99abd805a641345d55d4f3c9ad31.jpg",
                     footer = tagList(
-                        f7Link(label = "1", src = "https://www.youtube.com/watch?v=fJaOFCCL1aU", external = TRUE),
-                        f7Link(label = "2", src = "https://www.youtube.com/watch?v=hpJt16Rojqk", external = TRUE),
-                        f7Link(label = "3", src = "https://www.youtube.com/watch?v=LV9_tRTqLyo", external = TRUE),
-                        f7Link(label = "4", src = "https://www.youtube.com/watch?v=HODJFqMnQJA", external = TRUE),
-                        f7Link(label = "5", src = "https://www.youtube.com/watch?v=60YEfkhmOOM", external = TRUE),
+                        f7Link(label = "Leg", src = "https://www.youtube.com/watch?v=fJaOFCCL1aU", external = TRUE),
+                        f7Link(label = "Stretch", src = "https://www.youtube.com/watch?v=hpJt16Rojqk", external = TRUE),
+                        f7Link(label = "Butt", src = "https://www.youtube.com/watch?v=LV9_tRTqLyo", external = TRUE),
+                        f7Link(label = "Leg", src = "https://www.youtube.com/watch?v=HODJFqMnQJA", external = TRUE),
+                        f7Link(label = "Full", src = "https://www.youtube.com/watch?v=60YEfkhmOOM", external = TRUE),
                     )
                 ),
             ),
             
             #######
-            # TAB 2
+            # TAB 3
             #######            
             
             f7Tab(
@@ -136,7 +146,7 @@ ui = f7Page(iosTranslucentBars = TRUE,
                     f7SocialCard(
                         author_img = "profile.jpg",
                         author = "Zhi",
-                        date = Sys.Date(),
+                        date = as.Date(with_tz(Sys.Date(), "America/Los_Angeles")),
                         div(img(src = "ring.png", width = "100%"), style="text-align: center;"),
                         footer = tagList(
                             f7PopoverTarget(f7Button(label = paste(30 - length(unique(records$issue)), "days left"), 
@@ -144,13 +154,13 @@ ui = f7Page(iosTranslucentBars = TRUE,
                                                      rounded = TRUE),
                                             targetId = "days"),    
                             
-                                f7PopoverTarget(f7Button(label = ifelse(mean(records_by_day$time)<1000/30, "Longer time!", "Time OK!"), 
-                                                    color = ifelse(mean(records_by_day$time)<1000/30, "orange", "lightblue"),
+                                f7PopoverTarget(f7Button(label = ifelse(mean(records_by_day$Time)<1000/30, "Longer time!", "Time OK!"), 
+                                                    color = ifelse(mean(records_by_day$Time)<1000/30, "orange", "lightblue"),
                                                     rounded = TRUE),
                                             targetId = "time"),
                             
-                            f7PopoverTarget(f7Button(label = ifelse(mean(records_by_day$calories)<10500/30,"More calories!", "Calories OK!"), 
-                                                     color = ifelse(mean(records_by_day$calories)<10500/30, "orange", "lightblue"),
+                            f7PopoverTarget(f7Button(label = ifelse(mean(records_by_day$Calories)<target_cal/30,"More calories!", "Calories OK!"), 
+                                                     color = ifelse(mean(records_by_day$Calories)<target_cal/30, "orange", "lightblue"),
                                                      rounded = TRUE),
                                             targetId = "calories"),
                         )
@@ -165,7 +175,7 @@ ui = f7Page(iosTranslucentBars = TRUE,
                     f7Progress(id = "p2", value = sum(records$time)/10, color = "lightblue"),
                 ),
                 f7Card(
-                    paste0("Burned ", round(sum(records$calories)/70), "% of 10,500 calories (~ 3lb fat)"),
+                    paste0("Burned ", round(sum(records$calories)/70), sprintf("%% of %sk calories (~ 3lb fat)", round(target_cal/1000, 1))),
                     f7Progress(id = "p3", value = sum(records$calories)/70, color = "red")
                 ),
                 
@@ -192,7 +202,10 @@ ui = f7Page(iosTranslucentBars = TRUE,
             f7Tab(
                 tabName = "History",
                 icon = f7Icon("book"),
-
+                f7Card(
+                    formattableOutput("table")    
+                ),
+                
                 f7Card(
                     f7Swiper(
                        id = "point-swiper",
@@ -226,27 +239,12 @@ ui = f7Page(iosTranslucentBars = TRUE,
                         scrollToInput = TRUE, 
                         value = firstday + nrow(records_by_day) ,
                         minDate = firstday,
-                        maxDate = firstday + nrow(records_by_day) + 1,
+                        maxDate = firstday + nrow(records_by_day),
                         openIn = "customModal",
                         direction = "vertical"
                     ),
                     
-                    uiOutput("timeline"),
-                    
-                    f7Swiper(
-                        id = "gauge-swiper",
-                        slidePerView = 1,
-                        center = TRUE,
-                        f7Slide(
-                            echarts4rOutput("gauge_plot_hr",
-                                            height = "300px")
-                            
-                        ),
-                        f7Slide(
-                            echarts4rOutput("gauge_plot_maxhr",
-                                            height = "300px")
-                        ) 
-                    )
+                    uiOutput("timeline")
                 )        
             ),
             
@@ -282,7 +280,7 @@ ui = f7Page(iosTranslucentBars = TRUE,
 )
 
 server = function(input, output, session) { 
-    Sys.sleep(3) # do something that takes time
+    Sys.sleep(1) # do something that takes time
     waiter_hide()
     
     # TAB1
@@ -298,7 +296,7 @@ server = function(input, output, session) {
             icon = f7Icon("hand_point_right"),
             text = sprintf("You need to work out for > %s mins and burn > %s calories",
                            round((1000-sum(records$time))/(30-length(unique(records$issue)))),
-                           round((7000-sum(records$calories))/(30-length(unique(records$issue))))),
+                           round((target_cal-sum(records$calories))/(30-length(unique(records$issue))))),
             session = session
 
         )
@@ -329,7 +327,7 @@ server = function(input, output, session) {
     observe({
         f7Popover(
             targetId = "time",
-            content = ifelse(mean(records_by_day$time)<1000/30, 
+            content = ifelse(mean(records_by_day$Time)<1000/30, 
                              sprintf("Averaged time (%s mins) is lower than target (%s mins).", round(mean(records$time)), round(1000/30)), 
                              "Keep the good work!"),
             session
@@ -339,8 +337,8 @@ server = function(input, output, session) {
     observe({
         f7Popover(
             targetId = "calories",
-            content = ifelse(mean(records_by_day$calories)<10500/30, 
-                             sprintf("Averaged calories (%s cals) is lower than target (%s cals).", round(mean(records$calories)), round(10500/30)), 
+            content = ifelse(mean(records_by_day$Calories)<target_cal/30, 
+                             sprintf("Averaged calories (%s cals) is lower than target (%s cals).", round(mean(records$calories)), round(target_cal/30)), 
                              "Keep the good work!"),
             session
         )
@@ -348,12 +346,12 @@ server = function(input, output, session) {
     
     # TAB2
     output$calories_plot <- renderEcharts4r({
-        records_by_day$time <- round(records_by_day$time)
+        records_by_day$Time <- round(records_by_day$Time)
         records_by_day %>%
-            e_chart(date) %>%
-            e_effect_scatter(calories, time, symbol = "pin", name = "Calories") %>%
-            e_scatter(time, symbol = ea_icons("clock"), symbol_size = 20, y_index = 1, name = "Time") %>%
-            e_mark_line(data = list(yAxis = round((10500-sum(records_by_day$calories))/(30-nrow(records_by_day)))), title = "Target") %>%
+            e_chart(Date) %>%
+            e_effect_scatter(Calories, Time, symbol = "pin", name = "Calories") %>%
+            e_scatter(Time, symbol = ea_icons("clock"), symbol_size = 20, y_index = 1, name = "Time") %>%
+            e_mark_line(data = list(yAxis = round((target_cal-sum(records_by_day$Calories))/(30-nrow(records_by_day)))), title = "Target") %>%
             e_tooltip(trigger = "axis") %>%
             e_y_axis(min = 0) 
         
@@ -361,7 +359,7 @@ server = function(input, output, session) {
         
     output$hr_plot <- renderEcharts4r({
         records_by_day %>%
-            e_chart(date) %>%
+            e_chart(Date) %>%
             e_effect_scatter(hr, name = "Averaged heart rate", symbol = ea_icons("heart")) %>%
             e_effect_scatter(maxhr, name = "Maximum heart rate", symbol = ea_icons("heart")) %>%
             e_mark_line(data = list(yAxis = round(189*0.84)), title = "Orange") %>%
@@ -376,10 +374,10 @@ server = function(input, output, session) {
     
     output$calories_calender <- renderEcharts4r({
         records_by_day %>% 
-            mutate(date = as.Date(records_by_day$date, format = "%m/%d")) %>%
-            e_charts(date) %>% 
+            mutate(date = as.Date(records_by_day$Date, format = "%m/%d")) %>%
+            e_charts(Date) %>% 
             e_calendar(range = c("2020-05", "2020-07")) %>% 
-            e_heatmap(calories, coord_system = "calendar") %>% 
+            e_heatmap(Calories, coord_system = "calendar") %>% 
             e_visual_map(min = 100, max = 800, right = 10, bottom = 50) %>% 
             e_tooltip() %>%
             e_title("Daily calories")
@@ -387,10 +385,10 @@ server = function(input, output, session) {
     
     output$time_calender <- renderEcharts4r({
         records_by_day %>% 
-            mutate(date = as.Date(records_by_day$date, format = "%m/%d")) %>%
-            e_charts(date) %>% 
+            mutate(date = as.Date(records_by_day$Date, format = "%m/%d")) %>%
+            e_charts(Date) %>% 
             e_calendar(range = c("2020-05", "2020-07")) %>% 
-            e_heatmap(time, coord_system = "calendar") %>% 
+            e_heatmap(Time, coord_system = "calendar") %>% 
             e_visual_map(min = 20, max = 100, right = 10, bottom = 50) %>% 
             e_tooltip() %>%
             e_title("Daily workout time")        
@@ -415,17 +413,45 @@ server = function(input, output, session) {
                    sides = TRUE)
     })
     
-    output$gauge_plot_hr <- renderEcharts4r({
-        e_charts() %>% 
-            e_gauge(round(max(records$hr[index()])/189*100, 1), "PERCENT") %>% 
-            e_title("Average heart rate") 
+    # https://getbootstrap.com/docs/3.3/components/
+    output$table <- renderFormattable({
+        df_table <- records_by_day
+        
+        df_table$hr <- cut(df_table$hr, 
+                                      breaks = c(-Inf, 189*0.6, 189*0.7, 189*0.84, 189*0.91, Inf),
+                                      labels = c("Light", "Warm-up", "Challenging",
+                                                 "Orange effect","All out effort")) %>% as.character()
+        
+        df_table$maxhr <- cut(df_table$maxhr, 
+                                         breaks = c(-Inf, 189*0.6, 189*0.7, 189*0.84, 189*0.91, Inf),
+                                         labels = c("Light", "Warm-up", "Challenging",
+                                                    "Orange effect","All out effort")) %>% as.character()
+        colnames(df_table)[c(5:7)]<-c("HR", "MaxHR", "ΔCal")
+        
+        formattable(df_table, list(
+            Freq = formatter("span", style = x ~ ifelse(x > 1, 
+                                                        style(color = "green", font.weight = "bold"), NA)),
+            area(col = c(Calories)) ~ normalize_bar("pink", 0.2),
+            Time = formatter("span",
+                             style = x ~ style(color = ifelse(x>1000/30, "green", "red")),
+                             x ~ icontext(ifelse(x>1000/30, "ok", "remove"))),
+            # hrlabel = formatter("span", 
+            #                     style = x ~ style(color = ifelse(x=="Warm-up", "blue", 
+            #                                                      ifelse(x=="Challenging", "orange", "red"))), 
+            #                     x),
+            HR = formatter("span",
+                           style = x ~ style(color = ifelse(x=="Light", "#3d84c9", ifelse(x=="Warm-up", "#339676", ifelse(x=="Challenging", "#f97108", "#af0500")))),
+                           x ~ icontext(ifelse(x==1, "heart", "heart"))),
+            `MaxHR` = formatter("span",
+                                 style = x ~ style(color = ifelse(x=="Light", "#3d84c9", ifelse(x=="Warm-up", "#339676", ifelse(x=="Challenging", "#f97108", "#af0500")))),
+                                 x ~ icontext(ifelse(x==1, "heart", "heart"))),
+             `ΔCal` = formatter(
+                "span",
+                style = x ~ style(color = ifelse(x < 0 , "red", "green")),
+                x ~ icontext(ifelse(x < 0, "arrow-down", "arrow-up"), x))
+        ))
     })
     
-    output$gauge_plot_maxhr <- renderEcharts4r({
-        e_charts() %>% 
-            e_gauge(round(max(records$maxhr[index()])/189*100, 1), "PERCENT") %>% 
-            e_title("Maximum heart rate") 
-    })  
 
     # TAB 4
     output$Plot2 <- renderImage({
