@@ -21,88 +21,69 @@ comments <- gh(
   .token = Sys.getenv("GITHUB_PAT", "")
 )
 
+load(file = "records.rdata")
 
 url_pattern <- "http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
 
-records <- c()
-for (comment in comments){
-  fig <- str_extract(comment$body, url_pattern)
-  fig <- gsub(")","",fig)
-  
-  issue <- as.numeric(gsub("https://api.github.com/repos/zhiiiyang/OTworkout/issues/", "", comment$issue_url))
-  date <- format(firstday + issue - 2, "%m/%d")
-  
-  uploadtime <- sprintf("%02s:%02s",
-                        hour(with_tz(ymd_hms(comment$created_at), "America/Los_Angeles")),
-                        minute(with_tz(ymd_hms(comment$created_at), "America/Los_Angeles")))
-  
-  cal_points <- image_read(fig) %>%
-    image_crop('828x110+0+680') %>%
-    tesseract::ocr() %>%
-    str_extract_all("[0-9]+") %>%
-    first(default = NULL) %>%
-    as.numeric()
-  
-  if(length(cal_points)==2){
-    c(calories, spalshpoints) %<-% cal_points
-  } else {
-    c(calories, spalshpoints) %<-% c(0, 0)
+if(length(comments) > nrow(records)){
+  for (comment in comments[(nrow(records)+1):(length(comments))]){
+    fig <- str_extract(comment$body, url_pattern)
+    fig <- gsub(")","",fig) 
+    
+    r <- GET(
+      sprintf(
+        "https://api.ocr.space/parse/imageurl?apikey=ee7d7ccbff88957&url=%s&OCREngine=2",
+        fig
+      )
+    )
+    res_text <- content(r, "text")
+    res_json <- jsonlite::fromJSON(res_text, flatten = TRUE)
+    strings <- res_json$ParsedResults['ParsedText']$ParsedText %>% 
+      strsplit("\n") %>%
+      first(default = NULL)
+    
+    issue <- as.numeric(gsub("https://api.github.com/repos/zhiiiyang/OTworkout/issues/", "", comment$issue_url))
+    date <- format(firstday + issue - 2, "%m/%d")
+    
+    uploadtime <- sprintf("%02s:%02s",
+                          hour(with_tz(ymd_hms(comment$created_at), "America/Los_Angeles")),
+                          minute(with_tz(ymd_hms(comment$created_at), "America/Los_Angeles")))
+    
+    calories <- max(sapply(strings[(grep("CALORIES", strings)-1:2)], function(x) tryCatch(as.numeric(x), warning = function(e) {return(0)}))) 
+    
+    duration <- strings[(grep("2020", strings)+1)] %>%
+      str_extract_all("([0-9]+)") %>%
+      first(default = NULL)
+    
+    if(length(duration)==3){
+      time <- as.numeric(duration)[1]*60 + as.numeric(duration)[2]
+    } else {
+      time <- as.numeric(duration)[1]
+    }
+    
+    # heart rates 
+    hr <- as.numeric(strings[(grep("POINTS", strings)+1)])
+    maxhr <- max(sapply(strings[(grep("MAX", strings)-1:2)], function(x) tryCatch(as.numeric(x), warning = function(e) {return(0)}))) 
+    
+    records <- rbind(records,
+                     data.frame(date, issue, uploadtime, 
+                                time, calories = as.numeric(calories), 
+                                hr =as.numeric(hr), 
+                                maxhr = as.numeric(maxhr), 
+                                stringsAsFactors = FALSE) )
   }
   
-  hour <- image_read(fig) %>%
-    image_crop('340x80+0+160') %>%
-    tesseract::ocr() %>%
-    gsub("[\r\n]", "", .) %>%
-    str_extract_all("([0-9]+)h") %>% 
-    first(default = NULL) %>%
-    gsub("h","", .) %>%
-    as.numeric()
+  records_by_day <- records %>% group_by(date) %>%
+    summarize(Freq = n(), 
+              Calories = sum(calories),
+              Time = sum(time),
+              hr = max(hr), 
+              maxhr = max(maxhr)) %>%
+    rename(Date = date) %>%
+    mutate(cal_prev = percent((Calories - lag(Calories, default = 0))/Calories, digits = 0)) 
   
-  min <- image_read(fig) %>%
-    image_crop('340x80+0+160') %>%
-    tesseract::ocr() %>%
-    gsub("[\r\n]", "", .) %>%
-    str_extract_all("([0-9]+)m") %>% 
-    first(default = NULL) %>%
-    gsub("m","", .) %>%
-    as.numeric()
-  
-  if(length(hour)>0){
-    time <- hour*60 + min
-  } else {
-    time <- min
-  }
-  
-  # heart rates 
-  image_read(fig) %>%
-    image_crop('828x80+0+1030') %>%
-    image_ocr() %>%
-    str_extract_all("([0-9]+)") %>% 
-    first(default = NULL) %>%
-    as.numeric() -> heartrates
-  
-  if(length(heartrates)==2){
-    c(hr, maxhr) %<-% heartrates
-  } else {
-    c(hr, maxhr) %<-% c(0, 0)
-  }
-  
-  records <- rbind(records,
-                       data.frame(date, issue, uploadtime, 
-                                  time, calories = as.numeric(calories), 
-                                  spalshpoints = as.numeric(spalshpoints), hr =as.numeric(hr), 
-                                  maxhr = as.numeric(maxhr), 
-                                  stringsAsFactors = FALSE) )
+  save(records, records_by_day, file = "records.rdata")
 }
-
-records_by_day <- records %>% group_by(date) %>%
-  summarize(Freq = n(), 
-            Calories = sum(calories),
-            Time = sum(time),
-            hr = max(hr), 
-            maxhr = max(maxhr)) %>%
-  rename(Date = date) %>%
-  mutate(cal_prev = percent((Calories - lag(Calories, default = 0))/Calories, digits = 0)) 
 
 
 

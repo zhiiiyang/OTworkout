@@ -11,8 +11,9 @@ library(ggplot2)
 library(lubridate)
 library(echarts4r.assets)
 library(waiter)
-library(magick)
 library(formattable)
+library(sparkline)
+library(httr)
 
 source("analyzeWorkout.R")
 
@@ -49,8 +50,7 @@ ui = f7Page(iosTranslucentBars = TRUE,
                 icon = f7Icon("calendar_today"),
                 active = TRUE,
                 
-                #f7Table(records, card = TRUE),
-                
+
                 f7SocialCard(
                     author_img = "profile.jpg",
                     authOr = "Zhi",
@@ -89,10 +89,13 @@ ui = f7Page(iosTranslucentBars = TRUE,
                 f7Card(
                     title = "Workout",
                     "Here are all your favourite videos.",
-                    img = "https://i1.hdslb.com/bfs/archive/7e031b649d8bb61bf2da8db729380a289b02d9d2.jpg_560x350.jpg",
+                    img = "https://sf6-xgcdn-tos.pstatp.com/img/tos-cn-i-0004/ddb2f929caaf4266ba09bb216be6b92b~tplv-noop.jpg",
                     footer = tagList(
                         f7Link(label = "Arm", src = "https://www.bilibili.com/video/BV1W7411c7rH", external = TRUE),
-                        f7Link(label = "Body", src = "https://www.bilibili.com/video/BV1XJ411x7yz", external = TRUE)
+                        f7Link(label = "Body", src = "https://www.bilibili.com/video/BV1XJ411x7yz", external = TRUE),
+                        f7Link(label = "Legs", src = "https://www.bilibili.com/video/BV1yb411G7Me", external = TRUE),
+                        f7Link(label = "Arms", src = "https://www.bilibili.com/video/BV1Gs411R7ge", external = TRUE)
+                        
                     )
                 ),
                 
@@ -101,9 +104,9 @@ ui = f7Page(iosTranslucentBars = TRUE,
                     "Here are all the inspirational vidoes from Bilibili.",
                     img = "https://esportsobserver.com/wp-content/uploads/2020/04/Bilibili-Investment.jpg",
                     footer = tagList(
-                        f7Link(label = "Dove", src = "https://www.bilibili.com/video/BV1YK4y1C7CU", external = TRUE),
                         f7Link(label = "Dang", src = "https://www.bilibili.com/video/BV1Nf4y1U7Av", external = TRUE),
                         f7Link(label = "Bro", src = "https://www.bilibili.com/video/BV18k4y167qH", external = TRUE),
+                        
                     )
                 ),
                 
@@ -203,8 +206,12 @@ ui = f7Page(iosTranslucentBars = TRUE,
                 tabName = "History",
                 icon = f7Icon("book"),
                 f7Card(
-                    formattableOutput("table")    
-                ),
+                    formattableOutput("table1")    
+                ),           
+                
+                # f7Card(
+                #     sparklineOutput("table2")    
+                # ),
                 
                 f7Card(
                     f7Swiper(
@@ -243,7 +250,7 @@ ui = f7Page(iosTranslucentBars = TRUE,
                         openIn = "customModal",
                         direction = "vertical"
                     ),
-                    
+                    dataTableOutput("table2"),
                     uiOutput("timeline")
                 )        
             ),
@@ -351,9 +358,11 @@ server = function(input, output, session) {
             e_chart(Date) %>%
             e_effect_scatter(Calories, Time, symbol = "pin", name = "Calories") %>%
             e_scatter(Time, symbol = ea_icons("clock"), symbol_size = 20, y_index = 1, name = "Time") %>%
+            e_line(Calories) %>%
+            e_line(Time, y_index = 1) %>%
             e_mark_line(data = list(yAxis = round((target_cal-sum(records_by_day$Calories))/(30-nrow(records_by_day)))), title = "Target") %>%
             e_tooltip(trigger = "axis") %>%
-            e_y_axis(min = 0) 
+            e_y_axis(min = 0)
         
     })
         
@@ -364,6 +373,8 @@ server = function(input, output, session) {
             e_effect_scatter(maxhr, name = "Maximum heart rate", symbol = ea_icons("heart")) %>%
             e_mark_line(data = list(yAxis = round(189*0.84)), title = "Orange") %>%
             e_mark_line(data = list(yAxis = round(189*0.71)), title = "Challenge") %>%
+            e_line(hr) %>%
+            e_line(maxhr) %>%
             e_color(
                 c("#ea710d", "#b00204")
             ) %>%
@@ -374,7 +385,7 @@ server = function(input, output, session) {
     
     output$calories_calender <- renderEcharts4r({
         records_by_day %>% 
-            mutate(date = as.Date(records_by_day$Date, format = "%m/%d")) %>%
+            mutate(Date = as.Date(records_by_day$Date, format = "%m/%d")) %>%
             e_charts(Date) %>% 
             e_calendar(range = c("2020-05", "2020-07")) %>% 
             e_heatmap(Calories, coord_system = "calendar") %>% 
@@ -385,7 +396,7 @@ server = function(input, output, session) {
     
     output$time_calender <- renderEcharts4r({
         records_by_day %>% 
-            mutate(date = as.Date(records_by_day$Date, format = "%m/%d")) %>%
+            mutate(Date = as.Date(records_by_day$Date, format = "%m/%d")) %>%
             e_charts(Date) %>% 
             e_calendar(range = c("2020-05", "2020-07")) %>% 
             e_heatmap(Time, coord_system = "calendar") %>% 
@@ -414,9 +425,9 @@ server = function(input, output, session) {
     })
     
     # https://getbootstrap.com/docs/3.3/components/
-    output$table <- renderFormattable({
-        df_table <- records_by_day
-        
+    output$table1 <- renderFormattable({
+        df_table <- records_by_day[nrow(records_by_day):(nrow(records_by_day)-6), ]
+
         df_table$hr <- cut(df_table$hr, 
                                       breaks = c(-Inf, 189*0.6, 189*0.7, 189*0.84, 189*0.91, Inf),
                                       labels = c("Light", "Warm-up", "Challenging",
@@ -427,6 +438,7 @@ server = function(input, output, session) {
                                          labels = c("Light", "Warm-up", "Challenging",
                                                     "Orange effect","All out effort")) %>% as.character()
         colnames(df_table)[c(5:7)]<-c("HR", "MaxHR", "ΔCal")
+        df_table <- df_table[, c(1:3, 7, 4:6)]
         
         formattable(df_table, list(
             Freq = formatter("span", style = x ~ ifelse(x > 1, 
@@ -435,10 +447,6 @@ server = function(input, output, session) {
             Time = formatter("span",
                              style = x ~ style(color = ifelse(x>1000/30, "green", "red")),
                              x ~ icontext(ifelse(x>1000/30, "ok", "remove"))),
-            # hrlabel = formatter("span", 
-            #                     style = x ~ style(color = ifelse(x=="Warm-up", "blue", 
-            #                                                      ifelse(x=="Challenging", "orange", "red"))), 
-            #                     x),
             HR = formatter("span",
                            style = x ~ style(color = ifelse(x=="Light", "#3d84c9", ifelse(x=="Warm-up", "#339676", ifelse(x=="Challenging", "#f97108", "#af0500")))),
                            x ~ icontext(ifelse(x==1, "heart", "heart"))),
@@ -452,7 +460,46 @@ server = function(input, output, session) {
         ))
     })
     
+    output$table2 <- renderDataTable({
+        
+        fw <- as.htmlwidget(
+            formattable(
+                data.frame(
+                    id = c("a", "b"),
+                    sparkline = c(
+                        spk_chr(runif(10,0,10), type="bar"),
+                        spk_chr(runif(10,0,5), type="bar")
+                    ),
+                    stringsAsFactors = FALSE
+                )
+            )
+        )
+        
+        spk_add_deps(fw)
+    })
+    
+    # output$table2 <- renderSparkline({
+    #     df_table2 <- records_by_day
+    #     df_table2$Day <- wday(as.Date(df_table2$Date, "%m/%d"), label = TRUE)
+    #     df_table2$Week <- (1:nrow(df_table2)) %/% 7 +1
+    # 
+    #     df <- lapply(unique(df_table2$Week), function(x){
+    #         tmp <- df_table2 %>% filter(Week == x)
+    #         return(data.frame(Week = x,
+    #                           Time = as.character(htmltools::as.tags(sparkline(tmp$Time, type = "bar"))),
+    #                           Calories = as.character(htmltools::as.tags(sparkline(tmp$Calories, type = "line"))),
+    #                           HR = as.character(htmltools::as.tags(sparkline(tmp$hr, type = "box"))),
+    #                           MaxHR = as.character(htmltools::as.tags(sparkline(tmp$maxhr, type = "box")))
+    #                           
+    #         ))
+    #     })
+    #     
+    #     df
+    #     
+    # })
 
+    
+    
     # TAB 4
     output$Plot2 <- renderImage({
         list(src = calories$imgs[which(calories$food==input$food)],
