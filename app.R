@@ -14,6 +14,8 @@ library(waiter)
 library(formattable)
 library(sparkline)
 library(httr)
+library(purrr)
+library(DT)
 
 source("analyzeWorkout.R")
 
@@ -65,6 +67,7 @@ ui = f7Page(iosTranslucentBars = TRUE,
                         f7Link(label = "Start workout", src = "https://apps.apple.com/us/app/orangetheory-fitness/id1424351827", external = TRUE)
                     )
                 ),
+                
                 
                 f7Card(
                     f7Swipeout(
@@ -208,15 +211,16 @@ ui = f7Page(iosTranslucentBars = TRUE,
                 f7Card(
                     formattableOutput("table1")    
                 ),           
-                
-                # f7Card(
-                #     sparklineOutput("table2")    
-                # ),
+            
                 
                 f7Card(
                     f7Swiper(
                        id = "point-swiper",
                        slidePerView = 1,
+                       f7Slide(
+                           dataTableOutput("table2")
+                       ), 
+                       
                        f7Slide(
                            echarts4rOutput("calories_plot",
                                            width = "400px", height = "280px") 
@@ -235,7 +239,9 @@ ui = f7Page(iosTranslucentBars = TRUE,
                        f7Slide(
                            echarts4rOutput("time_calender",
                                            width = "400px", height = "280px") 
-                       ),                      
+                       ), 
+                       
+                       
                    )
                 ),
                 
@@ -250,7 +256,6 @@ ui = f7Page(iosTranslucentBars = TRUE,
                         openIn = "customModal",
                         direction = "vertical"
                     ),
-                    dataTableOutput("table2"),
                     uiOutput("timeline")
                 )        
             ),
@@ -293,7 +298,7 @@ server = function(input, output, session) {
     # TAB1
     output$frequency <- renderText({
         freq <- sum(as.numeric(records$calories))/calories$calories[which(calories$food==input$food)]
-        paste0("After ", nrow(records), " workouts, you have burned calories same as ", round(freq, 1), " units.")
+        paste0("After ", nrow(records_by_day), " workouts, you have burned calories same as ", round(freq, 1), " units.")
     })
     
 
@@ -371,14 +376,13 @@ server = function(input, output, session) {
             e_chart(Date) %>%
             e_effect_scatter(hr, name = "Averaged heart rate", symbol = ea_icons("heart")) %>%
             e_effect_scatter(maxhr, name = "Maximum heart rate", symbol = ea_icons("heart")) %>%
-            e_mark_line(data = list(yAxis = round(189*0.84)), title = "Orange") %>%
-            e_mark_line(data = list(yAxis = round(189*0.71)), title = "Challenge") %>%
             e_line(hr) %>%
             e_line(maxhr) %>%
+            e_mark_line(data = list(yAxis = round(189*0.84)), title = "Orange") %>%
+            e_mark_line(data = list(yAxis = round(189*0.71)), title = "Challenge") %>%
             e_color(
                 c("#ea710d", "#b00204")
             ) %>%
-            e_legend(type = "scroll") %>%
             e_tooltip(trigger = "axis") %>%
             e_y_axis(min = 60) 
     })
@@ -389,7 +393,8 @@ server = function(input, output, session) {
             e_charts(Date) %>% 
             e_calendar(range = c("2020-05", "2020-07")) %>% 
             e_heatmap(Calories, coord_system = "calendar") %>% 
-            e_visual_map(min = 100, max = 800, right = 10, bottom = 50) %>% 
+            e_visual_map(min = 100, max = 800, right = 10, bottom = 50,
+                         inRange = list(color = c("#f6f6f6", "#339676"))) %>% 
             e_tooltip() %>%
             e_title("Daily calories")
     })
@@ -400,7 +405,8 @@ server = function(input, output, session) {
             e_charts(Date) %>% 
             e_calendar(range = c("2020-05", "2020-07")) %>% 
             e_heatmap(Time, coord_system = "calendar") %>% 
-            e_visual_map(min = 20, max = 100, right = 10, bottom = 50) %>% 
+            e_visual_map(min = 20, max = 100, right = 10, bottom = 50, 
+                         inRange = list(color = c("#f7f7f7", "red"))) %>% 
             e_tooltip() %>%
             e_title("Daily workout time")        
     })
@@ -460,44 +466,87 @@ server = function(input, output, session) {
         ))
     })
     
-    output$table2 <- renderDataTable({
-        
-        fw <- as.htmlwidget(
-            formattable(
-                data.frame(
-                    id = c("a", "b"),
-                    sparkline = c(
-                        spk_chr(runif(10,0,10), type="bar"),
-                        spk_chr(runif(10,0,5), type="bar")
-                    ),
-                    stringsAsFactors = FALSE
-                )
-            )
-        )
-        
-        spk_add_deps(fw)
-    })
     
-    # output$table2 <- renderSparkline({
-    #     df_table2 <- records_by_day
-    #     df_table2$Day <- wday(as.Date(df_table2$Date, "%m/%d"), label = TRUE)
-    #     df_table2$Week <- (1:nrow(df_table2)) %/% 7 +1
-    # 
-    #     df <- lapply(unique(df_table2$Week), function(x){
-    #         tmp <- df_table2 %>% filter(Week == x)
-    #         return(data.frame(Week = x,
-    #                           Time = as.character(htmltools::as.tags(sparkline(tmp$Time, type = "bar"))),
-    #                           Calories = as.character(htmltools::as.tags(sparkline(tmp$Calories, type = "line"))),
-    #                           HR = as.character(htmltools::as.tags(sparkline(tmp$hr, type = "box"))),
-    #                           MaxHR = as.character(htmltools::as.tags(sparkline(tmp$maxhr, type = "box")))
-    #                           
-    #         ))
-    #     })
-    #     
-    #     df
-    #     
-    # })
+    output$table2 <- renderDataTable({
+        df_table2 <- records_by_day
+        df_table2$Day <- lubridate::wday(as.Date(df_table2$Date, "%m/%d"), label = TRUE)
+        df_table2$Week <- (1:nrow(df_table2)) %/% 7 +1
 
+        
+        my_sparkline_bar <- function(x) {
+            sparkline(x, type = "bar",
+                      barColor = "#B00204",
+                      negBarColor = "#EA710D"
+            )
+        }
+        
+        my_sparkline_bar2 <- function(x) {
+            sparkline(x, type = "bar",    
+                      barColor = "#339676",
+                      negBarColor = "#3d84c9"
+            )
+        }
+        
+        my_sparkline_line <- function(x) {
+            sparkline(x, type = "line", fillColor = FALSE,  
+                      normalRangeMax = target_cal/30, normalRangeMin = 0, 
+                      normalRangeColor = "#deebf7", lineColor = "black", minSpotColor = FALSE, spotColor = FALSE)
+        }
+        
+        my_sparkline_line2 <- function(x) {
+            sparkline(x, type = "line", fillColor = FALSE,  
+                      normalRangeMax = 1000/30, normalRangeMin = 0, 
+                      normalRangeColor = "#deebf7", lineColor = "black", minSpotColor = FALSE, spotColor = FALSE)
+        }
+        
+        
+        df <- df_table2 %>% group_by(Week) %>%
+            summarise()
+        
+        df$Calories <- (df_table2$Calories) %>%
+            split(df_table2$Week) %>%
+            map(my_sparkline_line) %>%
+            map(htmltools::as.tags) %>%
+            map_chr(as.character)
+        
+        df$Time <- (df_table2$Time) %>%
+            split(df_table2$Week) %>%
+            map(my_sparkline_line2) %>%
+            map(htmltools::as.tags) %>%
+            map_chr(as.character)
+        
+        df$`MaxHR` <- (df_table2$maxhr - 189*0.84) %>%
+            split(df_table2$Week) %>%
+            map(my_sparkline_bar) %>%
+            map(htmltools::as.tags) %>%
+            map_chr(as.character)
+        
+        df$`HR`<- (df_table2$hr - 189*0.71) %>%
+            split(df_table2$Week) %>%
+            map(my_sparkline_bar2) %>%
+            map(htmltools::as.tags) %>%
+            map_chr(as.character)
+        
+        draw_callback <- htmlwidgets::JS("function(){HTMLWidgets.staticRender()}")
+        dt_options <- list(fnDrawCallback = draw_callback,
+                           columnDefs = list(list(
+                               className = 'dt-left', targets = 1:4,
+                               className = 'dt-bottom', targets = 1:4
+                           )),
+                           searching = FALSE,
+                           paging = FALSE, 
+                           info = FALSE,
+                           headerCallback = DT::JS(
+                               "function(thead) {",
+                               "  $(thead).css('font-size', '0.4em');",
+                               "}"
+                           ))
+        datatable(df, options = dt_options, escape = FALSE, 
+                  rownames = FALSE) %>%
+            formatStyle(columns = 1, fontSize = "40%") %>%
+            spk_add_deps()
+
+    })
     
     
     # TAB 4

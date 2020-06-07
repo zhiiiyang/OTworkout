@@ -154,7 +154,7 @@ dev.off()
 today <- as_date(with_tz(Sys.time(), "America/Los_Angeles"))
 ontrack <- ifelse(as.numeric(today-firstday+1) == nrow(records), 
                   "on track", 
-                  paste("miss", as.numeric(today-firstday+1) - nrow(records), "days"))
+                  paste("miss", as.numeric(today-firstday) - nrow(records_by_day), "days"))
 todaystatus <- ifelse(as.numeric(today-firstday + 1) == nrow(records),
                       "yes",
                       "no")
@@ -175,7 +175,7 @@ buttom_df$label[1]
 calories <- data.frame(food = c("Boba tea", "Rice",
                                 "Instant noodles", "Chips",
                                 "Daily calories burn"),
-                       calories = c(550, 200, 470, 1200, 1600),
+                       calories = c(550, 200, 470, 100, 1600),
                        imgs = c("www/Boba.png",
                                 "www/Rice.png",
                                 "www/Instant.png",
