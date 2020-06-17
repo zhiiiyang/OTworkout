@@ -18,7 +18,9 @@ comments <- gh(
   "GET /repos/:owner/:repo/issues/comments",
   owner = "zhiiiyang",
   repo = "OTworkout",
-  .token = Sys.getenv("GITHUB_PAT", "")
+  .token = Sys.getenv("GITHUB_PAT", ""), 
+  page = 1,
+  per_page = 100
 )
 
 load(file = "records.rdata")
