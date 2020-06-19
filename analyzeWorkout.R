@@ -1,4 +1,5 @@
-target_cal <- 3500*2.25
+target_cal <- 3500*2.2
+target_time <- 60*19
 
 #######################
 # process close issues 
@@ -93,7 +94,7 @@ if(length(comments) > nrow(records)){
 # TAB 1: liquid
 ########################
 
-liquid <- data.frame(value = c(length(issues_closed)/30, sum(records$time)/1000, sum(records$calories)/7000),
+liquid <- data.frame(value = c(length(issues_closed)/30, sum(records$time)/target_time, sum(records$calories)/target_cal),
                      color = c("darkturquoise", "limegreen", "crimson"),
                      legend = c("30 workouts", "1,000 mins", "7,000 calories (~ 2lb fat)"))
 
@@ -162,7 +163,7 @@ todaystatus <- ifelse(as.numeric(today-firstday + 1) == nrow(records),
                       "no")
 
 buttom_df <- data.frame(value = c(as.numeric(today-firstday + 1) - length(unique(records$issue)) < 2,
-                                  mean(records_by_day$Time)<1000/30, 
+                                  mean(records_by_day$Time)<target_time/30, 
                                   mean(records_by_day$Calories)<7000/30))
 buttom_df$color <- sapply(buttom_df$value, function(x) ifelse(x==TRUE,"orange", "lightblue"))
 

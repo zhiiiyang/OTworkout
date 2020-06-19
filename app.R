@@ -92,24 +92,12 @@ ui = f7Page(iosTranslucentBars = TRUE,
                 f7Card(
                     title = "Workout",
                     "Here are all your favourite videos.",
-                    img = "https://sf6-xgcdn-tos.pstatp.com/img/tos-cn-i-0004/ddb2f929caaf4266ba09bb216be6b92b~tplv-noop.jpg",
-                    footer = tagList(
-                        f7Link(label = "Arm", src = "https://www.bilibili.com/video/BV1W7411c7rH", external = TRUE),
-                        f7Link(label = "Body", src = "https://www.bilibili.com/video/BV1XJ411x7yz", external = TRUE),
-                        f7Link(label = "Legs", src = "https://www.bilibili.com/video/BV1yb411G7Me", external = TRUE),
-                        f7Link(label = "Arms", src = "https://www.bilibili.com/video/BV1Gs411R7ge", external = TRUE)
-                        
-                    )
-                ),
-                
-                f7Card(
-                    title = "Bilibili",
-                    "Here are all the inspirational vidoes from Bilibili.",
                     img = "https://esportsobserver.com/wp-content/uploads/2020/04/Bilibili-Investment.jpg",
                     footer = tagList(
-                        f7Link(label = "Dang", src = "https://www.bilibili.com/video/BV1Nf4y1U7Av", external = TRUE),
-                        f7Link(label = "Bro", src = "https://www.bilibili.com/video/BV18k4y167qH", external = TRUE),
-                        
+                        f7Link(label = "Arms", src = "https://www.bilibili.com/video/BV1W7411c7rH", external = TRUE),
+                        f7Link(label = "Body", src = "https://www.bilibili.com/video/BV1XJ411x7yz", external = TRUE),
+                        f7Link(label = "Legs", src = "https://www.bilibili.com/video/BV1yb411G7Me", external = TRUE),
+
                     )
                 ),
                 
@@ -118,9 +106,8 @@ ui = f7Page(iosTranslucentBars = TRUE,
                     "Here are Pamela Reif's workout videos.",
                     img = "https://i.ytimg.com/vi/Y2eOW7XYWxc/maxresdefault.jpg",
                     footer = tagList(
-                        f7Link(label = "Sixpack", src = "https://www.youtube.com/watch?v=Q-vuR4PJh2c", external = TRUE),
-                        f7Link(label = "Booty", src = "https://www.youtube.com/watch?v=RqfkrZA_ie0", external = TRUE),
-                        f7Link(label = "ABS", src = "https://www.youtube.com/watch?v=1f8yoFFdkcY", external = TRUE),
+                        f7Link(label = "Full-body", src = "https://www.youtube.com/watch?v=Cw-Wt4xKD2s", external = TRUE),
+                        f7Link(label = "Abs", src = "https://www.youtube.com/watch?v=1f8yoFFdkcY", external = TRUE),
                         f7Link(label = "Leg", src = "https://www.youtube.com/watch?v=Fu_oExrPX68", external = TRUE),
                     )
                 ),
@@ -130,11 +117,9 @@ ui = f7Page(iosTranslucentBars = TRUE,
                     "Here are Muscle Watching's workout videos.",
                     img = "https://i.pinimg.com/originals/30/ef/99/30ef99abd805a641345d55d4f3c9ad31.jpg",
                     footer = tagList(
-                        f7Link(label = "Leg", src = "https://www.youtube.com/watch?v=fJaOFCCL1aU", external = TRUE),
+                        f7Link(label = "Legs", src = "https://www.youtube.com/watch?v=fJaOFCCL1aU", external = TRUE),
                         f7Link(label = "Stretch", src = "https://www.youtube.com/watch?v=hpJt16Rojqk", external = TRUE),
-                        f7Link(label = "Butt", src = "https://www.youtube.com/watch?v=LV9_tRTqLyo", external = TRUE),
-                        f7Link(label = "Leg", src = "https://www.youtube.com/watch?v=HODJFqMnQJA", external = TRUE),
-                        f7Link(label = "Full", src = "https://www.youtube.com/watch?v=60YEfkhmOOM", external = TRUE),
+                        f7Link(label = "Full-body", src = "https://www.youtube.com/watch?v=60YEfkhmOOM", external = TRUE),
                     )
                 ),
             ),
@@ -160,8 +145,8 @@ ui = f7Page(iosTranslucentBars = TRUE,
                                                      rounded = TRUE),
                                             targetId = "days"),    
                             
-                                f7PopoverTarget(f7Button(label = ifelse(mean(records_by_day$Time)<1000/30, "Longer time!", "Time OK!"), 
-                                                    color = ifelse(mean(records_by_day$Time)<1000/30, "orange", "lightblue"),
+                                f7PopoverTarget(f7Button(label = ifelse(mean(records_by_day$Time)<target_time/30, "Longer time!", "Time OK!"), 
+                                                    color = ifelse(mean(records_by_day$Time)<target_time/30, "orange", "lightblue"),
                                                     rounded = TRUE),
                                             targetId = "time"),
                             
@@ -177,12 +162,12 @@ ui = f7Page(iosTranslucentBars = TRUE,
                     f7Progress(id = "p1", value = length(issues_closed)/30*100, color = "green")
                 ),
                 f7Card(
-                    paste0("Spent ", round(sum(records$time)/10), "% of 1,000 mins"),
-                    f7Progress(id = "p2", value = sum(records$time)/10, color = "lightblue"),
+                    paste0("Spent ", round(sum(records$time)/target_time*100), sprintf("%% of %s hrs", round(target_time/60, 1))),
+                    f7Progress(id = "p2", value = sum(records$time)/target_time*100, color = "lightblue"),
                 ),
                 f7Card(
-                    paste0("Burned ", round(sum(records$calories)/70), sprintf("%% of %sk calories (~ 3lb fat)", round(target_cal/1000, 1))),
-                    f7Progress(id = "p3", value = sum(records$calories)/70, color = "red")
+                    paste0("Burned ", round(sum(records$calories)/target_cal*100), sprintf("%% of %sk calories (~ 3lb fat)", round(target_cal/1000, 1))),
+                    f7Progress(id = "p3", value = sum(records$calories)/target_cal*100, color = "red")
                 ),
                 
                 
@@ -307,7 +292,7 @@ server = function(input, output, session) {
             title = "For the next workout",
             icon = f7Icon("hand_point_right"),
             text = sprintf("You need to work out for > %s mins and burn > %s calories",
-                           round((1000-sum(records$time))/(30-length(unique(records$issue)))),
+                           round((target_time-sum(records$time))/(30-length(unique(records$issue)))),
                            round((target_cal-sum(records$calories))/(30-length(unique(records$issue))))),
             session = session
 
@@ -339,8 +324,8 @@ server = function(input, output, session) {
     observe({
         f7Popover(
             targetId = "time",
-            content = ifelse(mean(records_by_day$Time)<1000/30, 
-                             sprintf("Averaged time (%s mins) is lower than target (%s mins).", round(mean(records$time)), round(1000/30)), 
+            content = ifelse(mean(records_by_day$Time)<target_time/30, 
+                             sprintf("Averaged time (%s mins) is lower than target (%s mins).", round(mean(records$time)), round(target_time/30)), 
                              "Keep the good work!"),
             session
         )
@@ -362,7 +347,7 @@ server = function(input, output, session) {
         records_by_day %>%
             e_chart(Date) %>%
             e_effect_scatter(Calories, Time, symbol = "pin", name = "Calories") %>%
-            e_scatter(Time, symbol = ea_icons("clock"), symbol_size = 20, y_index = 1, name = "Time") %>%
+            #e_scatter(Time, symbol = ea_icons("clock"), symbol_size = 20, y_index = 1, name = "Time") %>%
             e_line(Calories) %>%
             e_line(Time, y_index = 1) %>%
             e_mark_line(data = list(yAxis = round((target_cal-sum(records_by_day$Calories))/(30-nrow(records_by_day)))), title = "Target") %>%
@@ -374,10 +359,10 @@ server = function(input, output, session) {
     output$hr_plot <- renderEcharts4r({
         records_by_day %>%
             e_chart(Date) %>%
-            e_effect_scatter(hr, name = "Averaged heart rate", symbol = ea_icons("heart")) %>%
-            e_effect_scatter(maxhr, name = "Maximum heart rate", symbol = ea_icons("heart")) %>%
-            e_line(hr) %>%
-            e_line(maxhr) %>%
+            # e_effect_scatter(hr, name = "Averaged heart rate", symbol = ea_icons("heart")) %>%
+            # e_effect_scatter(maxhr, name = "Maximum heart rate", symbol = ea_icons("heart")) %>%
+            e_step(hr) %>%
+            e_step(maxhr) %>%
             e_mark_line(data = list(yAxis = round(189*0.84)), title = "Orange") %>%
             e_mark_line(data = list(yAxis = round(189*0.71)), title = "Challenge") %>%
             e_color(
@@ -451,8 +436,8 @@ server = function(input, output, session) {
                                                         style(color = "green", font.weight = "bold"), NA)),
             area(col = c(Calories)) ~ normalize_bar("pink", 0.2),
             Time = formatter("span",
-                             style = x ~ style(color = ifelse(x>1000/30, "green", "red")),
-                             x ~ icontext(ifelse(x>1000/30, "ok", "remove"))),
+                             style = x ~ style(color = ifelse(x>target_time/30, "green", "red")),
+                             x ~ icontext(ifelse(x>target_time/30, "ok", "remove"))),
             HR = formatter("span",
                            style = x ~ style(color = ifelse(x=="Light", "#3d84c9", ifelse(x=="Warm-up", "#339676", ifelse(x=="Challenging", "#f97108", "#af0500")))),
                            x ~ icontext(ifelse(x==1, "heart", "heart"))),
@@ -495,7 +480,7 @@ server = function(input, output, session) {
         
         my_sparkline_line2 <- function(x) {
             sparkline(x, type = "line", fillColor = FALSE,  
-                      normalRangeMax = 1000/30, normalRangeMin = 0, 
+                      normalRangeMax = target_time/30, normalRangeMin = 0, 
                       normalRangeColor = "#deebf7", lineColor = "black", minSpotColor = FALSE, spotColor = FALSE)
         }
         
