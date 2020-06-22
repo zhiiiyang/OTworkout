@@ -140,7 +140,7 @@ ui = f7Page(iosTranslucentBars = TRUE,
                         date = as.Date(with_tz(Sys.Date(), "America/Los_Angeles")),
                         div(img(src = "ring.png", width = "100%"), style="text-align: center;"),
                         footer = tagList(
-                            f7PopoverTarget(f7Button(label = paste(30 - length(unique(records$issue)), "days left"), 
+                            f7PopoverTarget(f7Button(label = paste(30 - nrow(records_by_day[-c(1:30), ]), "days left"), 
                                                      color = ifelse(as.numeric(today-firstday + 1) - length(unique(records$issue)) < 2, "lightblue", "orange"),
                                                      rounded = TRUE),
                                             targetId = "days"),    
@@ -158,16 +158,16 @@ ui = f7Page(iosTranslucentBars = TRUE,
                     ) 
                 ),
                 f7Card(
-                    paste0("Completed ", round(length(issues_closed)/30*100), "% of 30 workouts"),
-                    f7Progress(id = "p1", value = length(issues_closed)/30*100, color = "green")
+                    paste0("Completed ", round(nrow(records_by_day[-c(1:30), ])/30*100), "% of 30 workouts"),
+                    f7Progress(id = "p1", value = nrow(records_by_day[-c(1:30), ])/30*100, color = "green")
                 ),
                 f7Card(
-                    paste0("Spent ", round(sum(records$time)/target_time*100), sprintf("%% of %s hrs", round(target_time/60, 1))),
-                    f7Progress(id = "p2", value = sum(records$time)/target_time*100, color = "lightblue"),
+                    paste0("Spent ", round(sum(records_by_day[-c(1:30), "Time"])/target_time*100), sprintf("%% of %s hrs", round(target_time/60, 1))),
+                    f7Progress(id = "p2", value = sum(records_by_day[-c(1:30), "Time"])/target_time*100, color = "lightblue"),
                 ),
                 f7Card(
-                    paste0("Burned ", round(sum(records$calories)/target_cal*100), sprintf("%% of %sk calories (~ 3lb fat)", round(target_cal/1000, 1))),
-                    f7Progress(id = "p3", value = sum(records$calories)/target_cal*100, color = "red")
+                    paste0("Burned ", round(sum(records_by_day[-c(1:30), "Calories"])/target_cal*100), sprintf("%% of %sk calories (~ 3lb fat)", round(target_cal/1000, 1))),
+                    f7Progress(id = "p3", value = sum(records_by_day[-c(1:30), "Calories"])/target_cal*100, color = "red")
                 ),
                 
                 
@@ -283,7 +283,7 @@ server = function(input, output, session) {
     # TAB1
     output$frequency <- renderText({
         freq <- sum(as.numeric(records$calories))/calories$calories[which(calories$food==input$food)]
-        paste0("After ", nrow(records_by_day), " workouts, you have burned calories same as ", round(freq, 1), " units.")
+        paste0("After ", length(issues_closed), " workouts, you have burned calories same as ", round(freq, 1), " units.")
     })
     
 
@@ -316,7 +316,7 @@ server = function(input, output, session) {
             content = ifelse(as.numeric(today-firstday + 1) - length(unique(records$issue)) < 2 , 
                              "Everything is on track!", 
                              sprintf("You've missed %s times of workout!", 
-                                     as.numeric(today-firstday + 1) - length(unique(records$issue)))),
+                                     30 - length(issues_closed))),
             session
         )
     })
@@ -350,7 +350,7 @@ server = function(input, output, session) {
             #e_scatter(Time, symbol = ea_icons("clock"), symbol_size = 20, y_index = 1, name = "Time") %>%
             e_line(Calories) %>%
             e_line(Time, y_index = 1) %>%
-            e_mark_line(data = list(yAxis = round((target_cal-sum(records_by_day$Calories))/(30-nrow(records_by_day)))), title = "Target") %>%
+            e_mark_line(data = list(yAxis = round((target_cal-sum(records_by_day$Calories))/(30-length(issues_closed)))), title = "Target") %>%
             e_tooltip(trigger = "axis") %>%
             e_y_axis(min = 0)
         

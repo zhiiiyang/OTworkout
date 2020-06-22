@@ -1,10 +1,10 @@
-target_cal <- 3500*2.2
+target_cal <- 7500
 target_time <- 60*19
 
 #######################
 # process close issues 
 #######################
-firstday <- as.Date("2020-05-19")
+firstday <- as.Date("2020-06-21")
 
 
 issues_closed <- gh(
@@ -12,7 +12,9 @@ issues_closed <- gh(
   owner = "zhiiiyang",
   repo = "OTworkout",
   state = "closed",
-  .token = Sys.getenv("GITHUB_PAT", "")
+  .token = Sys.getenv("GITHUB_PAT", ""),
+  page = 1,
+  per_page = 100
 )
 
 comments <- gh(
@@ -23,6 +25,10 @@ comments <- gh(
   page = 1,
   per_page = 100
 )
+
+# remove the 1st 30days circle
+remove <- lapply(issues_closed, function(x) data.frame(title = x$title, url = x$html_url)) %>% do.call(rbind, .)
+remove$number <- sapply(remove$url, function(x) gsub("[^0-9]", "", x))
 
 load(file = "records.rdata")
 
@@ -93,8 +99,12 @@ if(length(comments) > nrow(records)){
 ########################
 # TAB 1: liquid
 ########################
+removeIndex <- remove$url[which(as_date(remove$title) < firstday)] %>% as.character()
+removeIssues <- remove$number[which(as_date(remove$title) < firstday)] %>% as.character()
 
-liquid <- data.frame(value = c(length(issues_closed)/30, sum(records$time)/target_time, sum(records$calories)/target_cal),
+
+liquid <- data.frame(value = c((length(issues_closed)-30)/30, sum(records_by_day[-(1:30), ]$Time)/target_time, 
+                               sum(records_by_day[-(1:30), ]$Calories)/target_cal),
                      color = c("darkturquoise", "limegreen", "crimson"),
                      legend = c("30 workouts", "1,000 mins", "7,000 calories (~ 2lb fat)"))
 
@@ -138,10 +148,10 @@ png("www/ring.png",width = 200*30, height = 140*30,
 p <- ggplot(data = data) +
   geom_rect(aes(ymax=ymax-0.002, ymin=ymin+0.002, xmax=3, xmin=2, fill=category)) +
   geom_text( x=0, y = 0, 
-             label = paste0("Day ", nrow(records_by_day)), 
+             label = paste0("Day ", nrow(records_by_day[-(1:30), ])), 
              size=1) + 
-  scale_fill_manual(values = c(hcl.colors(30, palette = "Temp", rev = TRUE)[1:nrow(records_by_day)],
-                               rep("gray95", 30 - nrow(records_by_day))))+
+  scale_fill_manual(values = c(hcl.colors(30, palette = "Temp", rev = TRUE)[1:nrow(records_by_day[-(1:30), ])],
+                               rep("gray95", 30 - nrow(records_by_day[-c(1:30), ]))))+
   coord_polar(theta="y") +
   xlim(c(0, 3)) +
   theme_void() +            
@@ -157,14 +167,14 @@ dev.off()
 today <- as_date(with_tz(Sys.time(), "America/Los_Angeles"))
 ontrack <- ifelse(as.numeric(today-firstday+1) == nrow(records), 
                   "on track", 
-                  paste("miss", as.numeric(today-firstday) - nrow(records_by_day), "days"))
+                  paste("miss", as.numeric(today-firstday) - nrow(records_by_day[-(1:30), ]), "days"))
 todaystatus <- ifelse(as.numeric(today-firstday + 1) == nrow(records),
                       "yes",
                       "no")
 
 buttom_df <- data.frame(value = c(as.numeric(today-firstday + 1) - length(unique(records$issue)) < 2,
-                                  mean(records_by_day$Time)<target_time/30, 
-                                  mean(records_by_day$Calories)<7000/30))
+                                  mean(records_by_day[-(1:30), ]$Time)<target_time/30, 
+                                  mean(records_by_day[-(1:30), ]$Calories)<7000/30))
 buttom_df$color <- sapply(buttom_df$value, function(x) ifelse(x==TRUE,"orange", "lightblue"))
 
 # time 
